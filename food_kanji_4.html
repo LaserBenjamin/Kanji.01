@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="食 Kanji">
+<title>食 Food Kanji</title>
+<style>
+  :root {
+    --ink:       #1A1208;
+    --paper:     #F7F0E3;
+    --lacquer:   #1C0A06;
+    --vermilion: #C8372D;
+    --gold:      #D4943A;
+    --goldlt:    #E8BC6A;
+    --cream:     #FAF5EA;
+    --muted:     #8A7A62;
+    --border:    #3A2820;
+    --card-bg:   #241610;
+    --surface:   #2E1C12;
+    --glow:      rgba(212,148,58,0.15);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    background: var(--lacquer);
+    color: var(--cream);
+    font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', -apple-system, sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Subtle noise texture overlay */
+  body::before {
+    content: '';
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    opacity: 0.4;
+  }
+
+  /* ── Pages ── */
+  .page { display: none; position: relative; z-index: 1; max-width: 420px; margin: 0 auto; padding: 20px 18px 32px; min-height: 100vh; }
+  .page.active { display: block; }
+
+  /* ── Home ── */
+  .home-header {
+    text-align: center; padding: 36px 0 28px;
+  }
+  .home-crest {
+    font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', -apple-system, sans-serif;
+    font-size: 72px; line-height: 1;
+    color: var(--gold);
+    text-shadow: 0 0 40px rgba(212,148,58,0.4);
+    display: block; margin-bottom: 10px;
+  }
+  .home-title {
+    font-family: 'Hiragino Mincho ProN', 'Yu Mincho', 'Georgia', serif;
+    font-size: 1.5rem; font-weight: 600;
+    color: var(--cream); letter-spacing: .12em;
+  }
+  .home-sub {
+    font-size: 0.68rem; color: var(--muted); margin-top: 6px;
+    letter-spacing: .18em; text-transform: uppercase;
+  }
+
+  /* Decorative divider */
+  .divider {
+    display: flex; align-items: center; gap: 12px;
+    margin: 20px 0;
+    color: var(--border);
+    font-size: 0.6rem; letter-spacing: .2em;
+  }
+  .divider::before, .divider::after {
+    content: ''; flex: 1; height: 1px; background: var(--border);
+  }
+
+  /* Stats strip */
+  .stats-strip {
+    display: grid; grid-template-columns: repeat(3,1fr);
+    gap: 10px; margin-bottom: 24px;
+  }
+  .stat-box {
+    background: var(--card-bg); border: 1px solid var(--border);
+    border-radius: 12px; padding: 12px 8px; text-align: center;
+  }
+  .stat-num { font-size: 1.4rem; font-weight: 700; color: var(--gold); line-height: 1; }
+  .stat-lbl { font-size: 0.6rem; color: var(--muted); margin-top: 4px; letter-spacing: .1em; text-transform: uppercase; }
+
+  /* Category pills */
+  .cat-row {
+    display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 22px;
+  }
+  .cat-pill {
+    background: var(--card-bg); border: 1px solid var(--border);
+    border-radius: 99px; padding: 6px 14px; font-size: 0.72rem;
+    color: var(--muted); cursor: pointer; transition: all .15s;
+    font-family: inherit; letter-spacing: .06em;
+  }
+  .cat-pill.active { background: var(--vermilion); border-color: var(--vermilion); color: var(--cream); }
+  .cat-pill:active { transform: scale(0.95); }
+
+  /* Start button */
+  .start-btn {
+    width: 100%; background: var(--vermilion); border: none;
+    border-radius: 16px; padding: 20px; font-family: inherit;
+    font-size: 1rem; font-weight: 700; color: var(--cream);
+    cursor: pointer; letter-spacing: .1em; text-transform: uppercase;
+    transition: all .15s; box-shadow: 0 4px 20px rgba(200,55,45,0.35);
+    position: relative; overflow: hidden;
+  }
+  .start-btn::after {
+    content: '→'; position: absolute; right: 20px; top: 50%; transform: translateY(-50%);
+    font-size: 1.2rem;
+  }
+  .start-btn:active { transform: scale(0.98); opacity: 0.9; }
+
+  /* ── Flashcard page ── */
+  .fc-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 0 18px;
+  }
+  .fc-end-btn {
+    background: none; border: 1px solid var(--border); border-radius: 8px;
+    padding: 6px 12px; font-family: inherit; font-size: 0.7rem;
+    color: var(--muted); cursor: pointer; letter-spacing: .08em;
+    transition: all .15s;
+  }
+  .fc-end-btn:active { background: var(--surface); }
+  .fc-progress-wrap { flex: 1; margin: 0 14px; }
+  .fc-progress-bar {
+    height: 4px; background: var(--border); border-radius: 99px; overflow: hidden;
+  }
+  .fc-progress-fill {
+    height: 100%; background: var(--gold); border-radius: 99px;
+    transition: width .3s ease;
+  }
+  .fc-counter { font-size: 0.65rem; color: var(--muted); text-align: right; margin-top: 4px; letter-spacing: .06em; }
+  .fc-category-tag {
+    font-size: 0.6rem; color: var(--vermilion); letter-spacing: .16em;
+    text-transform: uppercase; text-align: center; margin-bottom: 10px;
+  }
+
+  /* ── Card ── */
+  .card-wrap {
+    border-radius: 20px; overflow: hidden; margin-bottom: 14px;
+    border: 1px solid var(--border);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04);
+    cursor: pointer;
+  }
+  /* FRONT */
+  .card-face {
+    background: linear-gradient(160deg, var(--card-bg) 0%, #160A04 100%);
+    height: 210px; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; padding: 20px;
+    position: relative;
+  }
+  .card-face::before {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 50% 30%, rgba(212,148,58,0.08) 0%, transparent 70%);
+  }
+  .kanji-giant {
+    font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', -apple-system, sans-serif;
+    font-size: clamp(80px, 24vw, 120px);
+    color: var(--cream); line-height: 1; font-weight: 700;
+    text-shadow: 0 0 60px rgba(212,148,58,0.2);
+    position: relative; z-index: 1;
+  }
+  .card-hint {
+    font-size: 0.6rem; color: var(--muted); margin-top: 14px;
+    letter-spacing: .2em; text-transform: uppercase; position: relative; z-index: 1;
+  }
+  /* BACK */
+  .card-back {
+    background: var(--surface);
+    max-height: 210px; overflow-y: auto;
+    padding: 16px 18px;
+    display: none;
+  }
+  .card-wrap.revealed .card-face { display: none; }
+  .card-wrap.revealed .card-back { display: block; }
+
+  .back-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 8px; }
+  .back-meaning {
+    font-family: 'Hiragino Mincho ProN', 'Yu Mincho', 'Georgia', serif;
+    font-size: 1.5rem; font-weight: 600; color: var(--cream); line-height: 1.1;
+  }
+  .back-kanji-mini {
+    font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', -apple-system, sans-serif;
+    font-size: 2rem; font-weight: 700; color: var(--gold); line-height: 1;
+  }
+  .back-reading {
+    font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', -apple-system, sans-serif;
+    font-size: 0.82rem; color: var(--gold); margin-bottom: 10px; opacity: 0.85;
+  }
+  .back-divider { height: 1px; background: var(--border); margin-bottom: 10px; }
+  .back-examples { list-style: none; }
+  .back-examples li {
+    font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', -apple-system, sans-serif;
+    font-size: 0.78rem; color: var(--cream); opacity: 0.8;
+    padding: 5px 0; border-bottom: 1px solid rgba(58,40,32,0.6);
+    line-height: 1.5; display: flex; align-items: center; gap: 6px;
+  }
+  .back-examples li:last-child { border-bottom: none; }
+  .back-examples li .ex-save {
+    margin-left: auto; background: none; border: none; font-size: 0.9rem;
+    cursor: pointer; padding: 2px 4px; color: var(--muted); flex-shrink: 0;
+    opacity: 0.6; transition: opacity .15s;
+  }
+  .back-examples li .ex-save:active { opacity: 1; }
+
+  /* ── Reveal button ── */
+  .reveal-btn {
+    width: 100%; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; padding: 16px; font-family: inherit;
+    font-size: 0.8rem; color: var(--muted); cursor: pointer;
+    letter-spacing: .1em; text-transform: uppercase; margin-bottom: 14px;
+    transition: all .15s;
+  }
+  .reveal-btn:active { background: var(--card-bg); color: var(--cream); }
+  .reveal-btn.hidden, .hidden { display: none !important; }
+
+  /* ── Rating buttons ── */
+  .rating-label {
+    font-size: 0.6rem; color: var(--muted); text-align: center;
+    letter-spacing: .14em; text-transform: uppercase; margin-bottom: 8px;
+  }
+  .rating-btns { display: grid; grid-template-columns: repeat(5,1fr); gap: 7px; }
+  .rating-btn {
+    border-radius: 12px; padding: 11px 4px 9px; font-family: inherit;
+    cursor: pointer; transition: all .15s;
+    display: flex; flex-direction: column; align-items: center; gap: 3px;
+    border: 1px solid transparent;
+  }
+  .rating-btn:active { transform: scale(0.93); }
+  .rating-btn .r-num { font-size: 1rem; font-weight: 700; line-height: 1; }
+  .rating-btn .r-lbl { font-size: 0.52rem; line-height: 1.2; text-align: center; opacity: 0.8; }
+  .rating-btn[data-r="1"] { background: rgba(200,55,45,0.15); border-color: rgba(200,55,45,0.4); color: #E06055; }
+  .rating-btn[data-r="2"] { background: rgba(200,120,40,0.15); border-color: rgba(200,120,40,0.4); color: #D4843A; }
+  .rating-btn[data-r="3"] { background: rgba(180,160,40,0.15); border-color: rgba(180,160,40,0.4); color: #C8B040; }
+  .rating-btn[data-r="4"] { background: rgba(60,140,80,0.15); border-color: rgba(60,140,80,0.4); color: #50B870; }
+  .rating-btn[data-r="5"] { background: rgba(60,100,200,0.15); border-color: rgba(60,100,200,0.4); color: #6090E0; }
+
+  /* ── Summary ── */
+  .summary-wrap { text-align: center; padding: 40px 0 20px; }
+  .summary-bowl {
+    font-size: 64px; margin-bottom: 16px; display: block;
+  }
+  .summary-title {
+    font-family: 'Hiragino Mincho ProN', 'Yu Mincho', 'Georgia', serif;
+    font-size: 1.4rem; color: var(--cream); margin-bottom: 6px;
+  }
+  .summary-sub { font-size: 0.72rem; color: var(--muted); letter-spacing: .1em; margin-bottom: 28px; }
+  .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; }
+  .sum-box {
+    background: var(--card-bg); border: 1px solid var(--border);
+    border-radius: 14px; padding: 16px;
+  }
+  .sum-num { font-size: 2rem; font-weight: 700; line-height: 1; }
+  .sum-lbl { font-size: 0.62rem; color: var(--muted); margin-top: 4px; letter-spacing: .08em; text-transform: uppercase; }
+  .sum-num.good { color: #50B870; }
+  .sum-num.bad { color: #E06055; }
+
+  .action-btn {
+    width: 100%; background: var(--card-bg); border: 1px solid var(--border);
+    border-radius: 14px; padding: 16px 18px; font-family: inherit;
+    font-size: 0.85rem; color: var(--cream); cursor: pointer;
+    display: flex; align-items: center; gap: 12px; margin-bottom: 10px;
+    transition: all .15s;
+  }
+  .action-btn:active { background: var(--surface); }
+  .action-btn .a-icon { font-size: 1.3rem; flex-shrink: 0; }
+  .action-btn .a-text { text-align: left; flex: 1; }
+  .action-btn .a-label { font-size: 0.85rem; display: block; }
+  .action-btn .a-sub { font-size: 0.65rem; color: var(--muted); display: block; margin-top: 2px; }
+  .action-btn.primary { background: var(--vermilion); border-color: var(--vermilion); }
+  .action-btn.primary .a-sub { color: rgba(255,255,255,0.6); }
+
+  /* ── Browse page ── */
+  .page-header {
+    display: flex; align-items: center; gap: 12px; padding: 16px 0 20px;
+  }
+  .back-btn {
+    background: none; border: 1px solid var(--border); border-radius: 8px;
+    padding: 6px 12px; font-family: inherit; font-size: 0.7rem;
+    color: var(--muted); cursor: pointer; flex-shrink: 0;
+    transition: all .15s;
+  }
+  .back-btn:active { background: var(--surface); }
+  .page-title {
+    font-family: 'Hiragino Mincho ProN', 'Yu Mincho', 'Georgia', serif;
+    font-size: 1.1rem; color: var(--cream);
+  }
+
+  /* Browse filter tabs */
+  .filter-row { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 12px; margin-bottom: 4px; }
+  .filter-tab {
+    flex-shrink: 0; background: var(--card-bg); border: 1px solid var(--border);
+    border-radius: 99px; padding: 6px 14px; font-family: inherit;
+    font-size: 0.68rem; color: var(--muted); cursor: pointer;
+    white-space: nowrap; transition: all .15s; letter-spacing: .06em;
+  }
+  .filter-tab.active { background: var(--vermilion); border-color: var(--vermilion); color: var(--cream); }
+
+  /* Browse grid */
+  .browse-list { display: flex; flex-direction: column; gap: 8px; }
+  .browse-item {
+    background: var(--card-bg); border: 1px solid var(--border);
+    border-radius: 14px; padding: 12px 14px;
+    display: flex; align-items: center; gap: 12px;
+    cursor: pointer; transition: all .15s;
+  }
+  .browse-item:active { background: var(--surface); }
+  .browse-kanji {
+    font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', -apple-system, sans-serif;
+    font-size: 1.8rem; font-weight: 700; color: var(--gold);
+    width: 44px; text-align: center; flex-shrink: 0;
+  }
+  .browse-info { flex: 1; min-width: 0; }
+  .browse-meaning { font-size: 0.9rem; color: var(--cream); font-weight: 500; }
+  .browse-hira { font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', -apple-system, sans-serif; font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
+  .browse-rating {
+    font-size: 0.7rem; font-weight: 700; padding: 3px 8px;
+    border-radius: 6px; flex-shrink: 0;
+  }
+  .browse-rating.new { background: rgba(138,122,98,0.2); color: var(--muted); }
+  .browse-rating.r1  { background: rgba(200,55,45,0.2); color: #E06055; }
+  .browse-rating.r2  { background: rgba(200,120,40,0.2); color: #D4843A; }
+  .browse-rating.r3  { background: rgba(180,160,40,0.2); color: #C8B040; }
+  .browse-rating.r4  { background: rgba(60,140,80,0.2); color: #50B870; }
+  .browse-rating.r5  { background: rgba(60,100,200,0.2); color: #6090E0; }
+
+  /* ── Detail page ── */
+  .detail-kanji-block {
+    background: linear-gradient(160deg, var(--card-bg), #160A04);
+    border: 1px solid var(--border); border-radius: 20px;
+    padding: 32px 24px; text-align: center; margin-bottom: 16px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  }
+  .detail-kanji {
+    font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', -apple-system, sans-serif;
+    font-size: clamp(72px,20vw,96px); font-weight: 700;
+    color: var(--cream); line-height: 1;
+    text-shadow: 0 0 40px rgba(212,148,58,0.25);
+  }
+  .detail-meaning {
+    font-family: 'Hiragino Mincho ProN', 'Yu Mincho', 'Georgia', serif;
+    font-size: 1.4rem; color: var(--gold); margin-top: 10px;
+  }
+  .detail-reading {
+    font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', -apple-system, sans-serif;
+    font-size: 0.85rem; color: var(--muted); margin-top: 6px;
+  }
+  .detail-cat {
+    display: inline-block; background: var(--vermilion);
+    border-radius: 99px; padding: 3px 10px; font-size: 0.6rem;
+    letter-spacing: .12em; text-transform: uppercase; margin-top: 10px; color: var(--cream);
+  }
+  .detail-section { margin-bottom: 16px; }
+  .detail-section-title {
+    font-size: 0.6rem; color: var(--muted); letter-spacing: .18em;
+    text-transform: uppercase; margin-bottom: 8px;
+  }
+  .detail-examples { list-style: none; }
+  .detail-examples li {
+    font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', -apple-system, sans-serif;
+    font-size: 0.82rem; color: var(--cream); opacity: 0.85;
+    padding: 8px 0; border-bottom: 1px solid var(--border);
+    line-height: 1.5;
+  }
+  .detail-examples li:last-child { border-bottom: none; }
+  .detail-rating-row {
+    background: var(--card-bg); border: 1px solid var(--border);
+    border-radius: 12px; padding: 12px 14px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .detail-rating-lbl { font-size: 0.72rem; color: var(--muted); }
+  .detail-rating-val { font-size: 0.85rem; font-weight: 600; }
+
+  /* ── Nav bar ── */
+  .nav-bar {
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+    background: var(--lacquer); border-top: 1px solid var(--border);
+    display: flex; max-width: 420px; margin: 0 auto;
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+  /* offset pages for nav */
+  .page { padding-bottom: 80px; }
+  .nav-item {
+    flex: 1; display: flex; flex-direction: column; align-items: center;
+    padding: 10px 4px; cursor: pointer; transition: all .15s;
+    background: none; border: none; font-family: inherit;
+    color: var(--muted); font-size: 0.55rem; letter-spacing: .08em;
+    text-transform: uppercase; gap: 4px;
+  }
+  .nav-item .nav-icon { font-size: 1.3rem; }
+  .nav-item.active { color: var(--gold); }
+  .nav-item:active { opacity: 0.7; }
+
+  /* Make nav bar centred on wide screens */
+  @media (min-width: 420px) {
+    .nav-bar { left: 50%; right: auto; transform: translateX(-50%); width: 420px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══ HOME PAGE ═══ -->
+<div class="page active" id="page-home">
+  <div class="home-header">
+    <span class="home-crest">食</span>
+    <div class="home-title">Food Kanji</div>
+    <div class="home-sub">Japanese Restaurant Guide</div>
+  </div>
+
+  <div class="stats-strip" id="home-stats">
+    <div class="stat-box"><div class="stat-num" id="stat-studied">0</div><div class="stat-lbl">Studied</div></div>
+    <div class="stat-box"><div class="stat-num" id="stat-known">0</div><div class="stat-lbl">Known</div></div>
+    <div class="stat-box"><div class="stat-num" id="stat-total">0</div><div class="stat-lbl">Total</div></div>
+  </div>
+
+  <div class="divider">Study by category</div>
+
+  <div class="cat-row" id="cat-row">
+    <button class="cat-pill active" data-cat="all" onclick="selectCat(this,'all')">All</button>
+  </div>
+
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+    <span style="font-size:0.68rem;color:var(--muted);letter-spacing:.1em;text-transform:uppercase">Cards</span>
+    <div style="display:flex;align-items:center;gap:8px">
+      <input type="number" id="card-count" value="10" min="1" max="54"
+        style="width:56px;background:var(--card-bg);border:1px solid var(--border);border-radius:8px;
+               padding:6px 8px;font-family:inherit;font-size:0.9rem;color:var(--cream);text-align:center;outline:none">
+    </div>
+  </div>
+  <button class="start-btn" onclick="startFlashcards()" style="margin-bottom:14px">
+    Start Flashcards
+  </button>
+  <button class="start-btn" onclick="startFlashcards(true)"
+    style="background:var(--surface);box-shadow:none;border:1px solid var(--border);margin-bottom:0">
+    🔁 Review Weak Cards
+  </button>
+</div>
+
+<!-- ═══ FLASHCARD PAGE ═══ -->
+<div class="page" id="page-flashcard">
+  <div class="fc-header">
+    <button class="fc-end-btn" onclick="endSession()">✕ End</button>
+    <div class="fc-progress-wrap">
+      <div class="fc-progress-bar"><div class="fc-progress-fill" id="fc-fill" style="width:0%"></div></div>
+      <div class="fc-counter" id="fc-counter">1 / 10</div>
+    </div>
+  </div>
+
+  <div class="fc-category-tag" id="fc-cat-tag">Protein</div>
+
+  <div class="card-wrap" id="cardWrap" onclick="revealCard()">
+    <div class="card-face">
+      <div class="kanji-giant" id="fc-kanji">食</div>
+      <div class="card-hint">Tap to reveal</div>
+    </div>
+    <div class="card-back" id="cardBack">
+      <div class="back-top">
+        <div>
+          <div class="back-meaning" id="cb-meaning"></div>
+          <div class="back-reading" id="cb-reading"></div>
+        </div>
+        <div class="back-kanji-mini" id="cb-kanji-mini"></div>
+      </div>
+      <div class="back-divider"></div>
+      <ul class="back-examples" id="cb-examples"></ul>
+    </div>
+  </div>
+
+  <button class="reveal-btn" id="reveal-btn" onclick="revealCard()">Tap card · or tap here to reveal</button>
+
+  <div class="hidden" id="answer-btns">
+    <div class="rating-label">How well did you know it?</div>
+    <div class="rating-btns">
+      <button class="rating-btn" data-r="1" onclick="rateCard(1)"><span class="r-num">1</span><span class="r-lbl">Not at all</span></button>
+      <button class="rating-btn" data-r="2" onclick="rateCard(2)"><span class="r-num">2</span><span class="r-lbl">Seen it</span></button>
+      <button class="rating-btn" data-r="3" onclick="rateCard(3)"><span class="r-num">3</span><span class="r-lbl">Almost</span></button>
+      <button class="rating-btn" data-r="4" onclick="rateCard(4)"><span class="r-num">4</span><span class="r-lbl">Know it</span></button>
+      <button class="rating-btn" data-r="5" onclick="rateCard(5)"><span class="r-num">5</span><span class="r-lbl">Expert</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SUMMARY PAGE ═══ -->
+<div class="page" id="page-summary">
+  <div class="summary-wrap">
+    <span class="summary-bowl" id="sum-emoji">🍜</span>
+    <div class="summary-title">Session Complete</div>
+    <div class="summary-sub" id="sum-sub">10 cards reviewed</div>
+    <div class="summary-grid">
+      <div class="sum-box"><div class="sum-num good" id="sum-known">0</div><div class="sum-lbl">Known (4–5)</div></div>
+      <div class="sum-box"><div class="sum-num bad" id="sum-weak">0</div><div class="sum-lbl">To review (1–3)</div></div>
+    </div>
+  </div>
+  <button class="action-btn primary" onclick="startFlashcards(false, true)">
+    <span class="a-icon">🔁</span>
+    <span class="a-text"><span class="a-label">Repeat this set</span><span class="a-sub">Same cards, reshuffled</span></span>
+  </button>
+  <button class="action-btn" id="sum-retry-btn" onclick="retryWeak()">
+    <span class="a-icon">⚠️</span>
+    <span class="a-text"><span class="a-label">Retry weak cards</span><span class="a-sub" id="sum-retry-sub">0 cards rated 1–3</span></span>
+  </button>
+  <button class="action-btn" onclick="showPage('home')">
+    <span class="a-icon">🏠</span>
+    <span class="a-text"><span class="a-label">Back to home</span><span class="a-sub">Choose a new set</span></span>
+  </button>
+</div>
+
+<!-- ═══ BROWSE PAGE ═══ -->
+<div class="page" id="page-browse">
+  <div class="page-header">
+    <button class="back-btn" onclick="showPage('home')">← Back</button>
+    <div class="page-title">Browse All Kanji</div>
+  </div>
+  <div class="filter-row" id="browse-filters"></div>
+  <div class="browse-list" id="browse-list"></div>
+</div>
+
+<!-- ═══ DETAIL PAGE ═══ -->
+<div class="page" id="page-detail">
+  <div class="page-header">
+    <button class="back-btn" onclick="showPage('browse')">← Browse</button>
+    <div class="page-title">Detail</div>
+  </div>
+  <div class="detail-kanji-block">
+    <div class="detail-kanji" id="det-kanji"></div>
+    <div class="detail-meaning" id="det-meaning"></div>
+    <div class="detail-reading" id="det-reading"></div>
+    <span class="detail-cat" id="det-cat"></span>
+  </div>
+  <div class="detail-section">
+    <div class="detail-section-title">Examples</div>
+    <ul class="detail-examples" id="det-examples"></ul>
+  </div>
+  <div class="detail-rating-row">
+    <span class="detail-rating-lbl">Your rating</span>
+    <span class="detail-rating-val" id="det-rating">Not studied yet</span>
+  </div>
+</div>
+
+<!-- ═══ NAV BAR ═══ -->
+<nav class="nav-bar">
+  <button class="nav-item active" id="nav-home" onclick="navTo('home')">
+    <span class="nav-icon">🏮</span>Home
+  </button>
+  <button class="nav-item" id="nav-browse" onclick="navTo('browse')">
+    <span class="nav-icon">📖</span>Browse
+  </button>
+</nav>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// KANJI DATA
+// ═══════════════════════════════════════════════════════
+const KANJI = [
+  {kanji:"魚",meaning:"Fish",hiragana:"さかな / ぎょ",category:"Protein",examples:["魚 (さかな) fish","刺身 (さしみ) sashimi","焼き魚 (やきざかな) grilled fish"]},
+  {kanji:"肉",meaning:"Meat",hiragana:"にく",category:"Protein",examples:["肉 (にく) meat","焼き肉 (やきにく) grilled meat","肉料理 (にくりょうり) meat dish"]},
+  {kanji:"豚",meaning:"Pork",hiragana:"ぶた / とん",category:"Protein",examples:["豚肉 (ぶたにく) pork","豚カツ (とんかつ) pork cutlet","豚骨 (とんこつ) pork bone broth"]},
+  {kanji:"牛",meaning:"Beef",hiragana:"うし / ぎゅう",category:"Protein",examples:["牛肉 (ぎゅうにく) beef","牛丼 (ぎゅうどん) beef bowl","牛乳 (ぎゅうにゅう) milk"]},
+  {kanji:"鶏",meaning:"Chicken",hiragana:"とり / けい",category:"Protein",examples:["鶏肉 (とりにく) chicken","唐揚げ (からあげ) fried chicken","鶏卵 (けいらん) chicken egg"]},
+  {kanji:"卵",meaning:"Egg",hiragana:"たまご / らん",category:"Protein",examples:["卵 (たまご) egg","卵焼き (たまごやき) rolled omelette","半熟卵 (はんじゅくたまご) soft-boiled egg"]},
+  {kanji:"蟹",meaning:"Crab",hiragana:"かに",category:"Protein",examples:["蟹 (かに) crab","蟹鍋 (かになべ) crab hot pot","蟹味噌 (かにみそ) crab innards"]},
+  {kanji:"海老",meaning:"Shrimp / Prawn",hiragana:"えび",category:"Protein",examples:["海老 (えび) shrimp","海老天 (えびてん) shrimp tempura","海老フライ (えびふらい) fried shrimp"]},
+  {kanji:"焼",meaning:"Grilled / Fried",hiragana:"やき / しょう",category:"Cooking",examples:["焼く (やく) to grill","焼き鳥 (やきとり) grilled chicken skewer","焼き飯 (やきめし) fried rice"]},
+  {kanji:"揚",meaning:"Deep-fried",hiragana:"あげ / よう",category:"Cooking",examples:["揚げる (あげる) to deep fry","唐揚げ (からあげ) fried chicken","天ぷら (てんぷら) tempura"]},
+  {kanji:"煮",meaning:"Simmered",hiragana:"に / しゃ",category:"Cooking",examples:["煮る (にる) to simmer","煮物 (にもの) simmered dish","煮込み (にこみ) stew"]},
+  {kanji:"蒸",meaning:"Steamed",hiragana:"む / じょう",category:"Cooking",examples:["蒸す (むす) to steam","蒸し料理 (むしりょうり) steamed dish","茶碗蒸し (ちゃわんむし) egg custard"]},
+  {kanji:"生",meaning:"Raw / Fresh",hiragana:"なま / せい",category:"Cooking",examples:["生 (なま) raw / fresh","生ビール (なまびーる) draft beer","生魚 (なまざかな) raw fish"]},
+  {kanji:"炒",meaning:"Stir-fried",hiragana:"いた / しょう",category:"Cooking",examples:["炒める (いためる) to stir-fry","炒め物 (いためもの) stir-fry dish","野菜炒め (やさいいため) veg stir-fry"]},
+  {kanji:"漬",meaning:"Pickled",hiragana:"つけ / づけ",category:"Cooking",examples:["漬物 (つけもの) pickles","漬ける (つける) to pickle","醤油漬け (しょうゆづけ) soy marinade"]},
+  {kanji:"麺",meaning:"Noodles",hiragana:"めん",category:"Noodles & Rice",examples:["麺 (めん) noodles","ラーメン (らーめん) ramen","冷麺 (れいめん) cold noodles"]},
+  {kanji:"蕎麦",meaning:"Soba",hiragana:"そば",category:"Noodles & Rice",examples:["蕎麦 (そば) soba noodles","蕎麦屋 (そばや) soba restaurant","ざる蕎麦 (ざるそば) cold soba on bamboo"]},
+  {kanji:"飯",meaning:"Rice / Meal",hiragana:"めし / ごはん",category:"Noodles & Rice",examples:["ご飯 (ごはん) rice / meal","炊き込みご飯 (たきこみごはん) seasoned rice","白飯 (しろめし) plain white rice"]},
+  {kanji:"丼",meaning:"Rice Bowl",hiragana:"どんぶり / どん",category:"Noodles & Rice",examples:["丼 (どんぶり) rice bowl","牛丼 (ぎゅうどん) beef bowl","親子丼 (おやこどん) chicken & egg bowl"]},
+  {kanji:"寿司",meaning:"Sushi",hiragana:"すし",category:"Noodles & Rice",examples:["寿司 (すし) sushi","回転寿司 (かいてんずし) conveyor belt sushi","握り寿司 (にぎりずし) hand-formed sushi"]},
+  {kanji:"野菜",meaning:"Vegetables",hiragana:"やさい",category:"Vegetables",examples:["野菜 (やさい) vegetables","野菜炒め (やさいいため) stir-fried vegetables","野菜サラダ (やさいさらだ) vegetable salad"]},
+  {kanji:"豆腐",meaning:"Tofu",hiragana:"とうふ",category:"Vegetables",examples:["豆腐 (とうふ) tofu","冷奴 (ひややっこ) cold tofu","揚げ豆腐 (あげどうふ) fried tofu"]},
+  {kanji:"茸",meaning:"Mushroom",hiragana:"きのこ",category:"Vegetables",examples:["茸 (きのこ) mushroom","椎茸 (しいたけ) shiitake","松茸 (まつたけ) matsutake mushroom"]},
+  {kanji:"熱",meaning:"Hot",hiragana:"あつ / ねつ",category:"Temperature",examples:["熱い (あつい) hot","熱々 (あつあつ) piping hot","熱燗 (あつかん) hot sake"]},
+  {kanji:"冷",meaning:"Cold",hiragana:"つめ / れい",category:"Temperature",examples:["冷たい (つめたい) cold","冷やし (ひやし) chilled","冷酒 (れいしゅ) cold sake"]},
+  {kanji:"辛",meaning:"Spicy",hiragana:"から / しん",category:"Taste",examples:["辛い (からい) spicy","辛口 (からくち) spicy/dry","唐辛子 (とうがらし) chilli pepper"]},
+  {kanji:"甘",meaning:"Sweet",hiragana:"あま / かん",category:"Taste",examples:["甘い (あまい) sweet","甘口 (あまくち) sweet/mild","甘酢 (あまず) sweet vinegar"]},
+  {kanji:"塩",meaning:"Salt",hiragana:"しお / えん",category:"Taste",examples:["塩 (しお) salt","塩味 (しおあじ) salty flavour","塩ラーメン (しおらーめん) salt ramen"]},
+  {kanji:"醤油",meaning:"Soy Sauce",hiragana:"しょうゆ",category:"Taste",examples:["醤油 (しょうゆ) soy sauce","醤油ラーメン (しょうゆらーめん) soy ramen","醤油漬け (しょうゆづけ) soy marinade"]},
+  {kanji:"味",meaning:"Flavour",hiragana:"あじ / み",category:"Taste",examples:["味 (あじ) flavour","味噌 (みそ) miso","調味料 (ちょうみりょう) seasoning"]},
+  {kanji:"酸",meaning:"Sour",hiragana:"す / さん",category:"Taste",examples:["酸っぱい (すっぱい) sour","酸味 (さんみ) sourness","酢 (す) vinegar"]},
+  {kanji:"一",meaning:"One",hiragana:"いち / ひと",category:"Numbers",examples:["一 (いち) one","一人前 (いちにんまえ) one serving","一品 (いっぴん) one dish"]},
+  {kanji:"二",meaning:"Two",hiragana:"に / ふた",category:"Numbers",examples:["二 (に) two","二人前 (ふたりまえ) two servings","二杯 (にはい) two cups"]},
+  {kanji:"三",meaning:"Three",hiragana:"さん / み",category:"Numbers",examples:["三 (さん) three","三人前 (さんにんまえ) three servings","三杯 (さんばい) three cups"]},
+  {kanji:"四",meaning:"Four",hiragana:"し / よん",category:"Numbers",examples:["四 (し/よん) four","四人 (よにん) four people","四品 (しひん) four dishes"]},
+  {kanji:"五",meaning:"Five",hiragana:"ご / いつ",category:"Numbers",examples:["五 (ご) five","五人前 (ごにんまえ) five servings","五目 (ごもく) five-ingredient mix"]},
+  {kanji:"六",meaning:"Six",hiragana:"ろく / むっ",category:"Numbers",examples:["六 (ろく) six","六人 (ろくにん) six people","六品 (ろっぴん) six dishes"]},
+  {kanji:"七",meaning:"Seven",hiragana:"しち / なな",category:"Numbers",examples:["七 (しち) seven","七味 (しちみ) seven-spice blend","七品 (ななしな) seven dishes"]},
+  {kanji:"八",meaning:"Eight",hiragana:"はち / やっ",category:"Numbers",examples:["八 (はち) eight","八宝菜 (はっぽうさい) eight treasure stir-fry","八品 (はちひん) eight dishes"]},
+  {kanji:"九",meaning:"Nine",hiragana:"く / きゅう",category:"Numbers",examples:["九 (く/きゅう) nine","九州 (きゅうしゅう) Kyushu region","九品 (くほん) nine dishes"]},
+  {kanji:"十",meaning:"Ten",hiragana:"じゅう / とお",category:"Numbers",examples:["十 (じゅう) ten","十人前 (じゅうにんまえ) ten servings","十品 (じっぴん) ten dishes"]},
+  {kanji:"酒",meaning:"Sake / Alcohol",hiragana:"さけ / しゅ",category:"Drinks",examples:["お酒 (おさけ) sake / alcohol","日本酒 (にほんしゅ) Japanese sake","居酒屋 (いざかや) izakaya bar"]},
+  {kanji:"茶",meaning:"Tea",hiragana:"ちゃ / さ",category:"Drinks",examples:["お茶 (おちゃ) tea","緑茶 (りょくちゃ) green tea","麦茶 (むぎちゃ) barley tea"]},
+  {kanji:"水",meaning:"Water",hiragana:"みず / すい",category:"Drinks",examples:["水 (みず) water","お水 (おみず) water (polite)","炭酸水 (たんさんすい) sparkling water"]},
+  {kanji:"食",meaning:"Eat / Food",hiragana:"た / しょく",category:"Restaurant",examples:["食べる (たべる) to eat","食事 (しょくじ) meal","食堂 (しょくどう) canteen"]},
+  {kanji:"飲",meaning:"Drink",hiragana:"の / いん",category:"Restaurant",examples:["飲む (のむ) to drink","飲み物 (のみもの) drink","飲食店 (いんしょくてん) restaurant"]},
+  {kanji:"注文",meaning:"Order",hiragana:"ちゅうもん",category:"Restaurant",examples:["注文 (ちゅうもん) order","注文する (ちゅうもんする) to order","ご注文は？ (ごちゅうもんは？) What would you like?"]},
+  {kanji:"定食",meaning:"Set Meal",hiragana:"ていしょく",category:"Restaurant",examples:["定食 (ていしょく) set meal","本日の定食 (ほんじつのていしょく) today's set","定番 (ていばん) classic dish"]},
+  {kanji:"席",meaning:"Seat",hiragana:"せき",category:"Restaurant",examples:["席 (せき) seat","お席 (おせき) seat (polite)","禁煙席 (きんえんせき) non-smoking seat"]},
+  {kanji:"会計",meaning:"The Bill",hiragana:"かいけい",category:"Restaurant",examples:["会計 (かいけい) bill / check","お会計 (おかいけい) the bill (polite)","お会計お願いします check please"]},
+  {kanji:"禁煙",meaning:"No Smoking",hiragana:"きんえん",category:"Restaurant",examples:["禁煙 (きんえん) no smoking","禁煙席 (きんえんせき) non-smoking seat","禁煙エリア (きんえんえりあ) smoke-free area"]},
+  {kanji:"辛口",meaning:"Spicy / Dry",hiragana:"からくち",category:"Restaurant",examples:["辛口 (からくち) spicy or dry (sake)","辛口ワイン (からくちわいん) dry wine","辛口カレー (からくちかれー) spicy curry"]},
+];
+
+// ═══════════════════════════════════════════════════════
+// STORAGE
+// ═══════════════════════════════════════════════════════
+const STORAGE_KEY = 'food_kanji_v1';
+function loadProgress() {
+  try { const r = localStorage.getItem(STORAGE_KEY); if (r) return JSON.parse(r); } catch(e){}
+  return { ratings: {}, sessions: 0 };
+}
+function saveProgress() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(prog)); } catch(e){}
+}
+let prog = loadProgress();
+prog.sessions = (prog.sessions || 0) + 1;
+if (!prog.ratings) prog.ratings = {};
+saveProgress();
+
+// ═══════════════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════════════
+const CATEGORIES = [...new Set(KANJI.map(k => k.category))];
+const SRS = {1:1, 2:2, 3:3, 4:6, 5:12};
+
+function shuffle(a) {
+  const b = [...a];
+  for (let i = b.length-1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i+1));
+    [b[i],b[j]] = [b[j],b[i]];
+  }
+  return b;
+}
+function getRating(kanji) { return prog.ratings[kanji]?.r || 0; }
+function isDue(kanji) {
+  const d = prog.ratings[kanji];
+  if (!d) return true;
+  return prog.sessions >= (d.nextAt || 0);
+}
+function setRating(kanji, r) {
+  prog.ratings[kanji] = { r, nextAt: prog.sessions + SRS[r] };
+}
+const RATING_NAMES = ['Not studied','Not at all','Seen it','Almost','Know it','Expert ⭐'];
+const RATING_COLORS = ['var(--muted)','#E06055','#D4843A','#C8B040','#50B870','#6090E0'];
+const BOWL_EMOJI = ['🎉','🍱','🍜','🍣','🥢','🏆'];
+
+// ═══════════════════════════════════════════════════════
+// PAGE ROUTING
+// ═══════════════════════════════════════════════════════
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  window.scrollTo(0,0);
+  if (id === 'home') renderHome();
+  if (id === 'browse') renderBrowse();
+}
+
+function navTo(id) {
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('nav-'+id)?.classList.add('active');
+  showPage(id);
+}
+
+// ═══════════════════════════════════════════════════════
+// HOME
+// ═══════════════════════════════════════════════════════
+let selectedCat = 'all';
+
+function renderHome() {
+  const total = KANJI.length;
+  const studied = KANJI.filter(k => getRating(k.kanji) > 0).length;
+  const known = KANJI.filter(k => getRating(k.kanji) >= 4).length;
+  document.getElementById('stat-studied').textContent = studied;
+  document.getElementById('stat-known').textContent = known;
+  document.getElementById('stat-total').textContent = total;
+
+  // Build category pills
+  const row = document.getElementById('cat-row');
+  row.innerHTML = `<button class="cat-pill ${selectedCat==='all'?'active':''}" data-cat="all" onclick="selectCat(this,'all')">All (${total})</button>`;
+  CATEGORIES.forEach(cat => {
+    const count = KANJI.filter(k => k.category === cat).length;
+    const active = selectedCat === cat ? 'active' : '';
+    row.innerHTML += `<button class="cat-pill ${active}" data-cat="${cat}" onclick="selectCat(this,'${cat}')">${cat} (${count})</button>`;
+  });
+
+  // Update card count max
+  const poolSize = selectedCat === 'all' ? total : KANJI.filter(k => k.category === selectedCat).length;
+  document.getElementById('card-count').max = poolSize;
+}
+
+function selectCat(btn, cat) {
+  selectedCat = cat;
+  document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  const poolSize = cat === 'all' ? KANJI.length : KANJI.filter(k => k.category === cat).length;
+  document.getElementById('card-count').max = poolSize;
+  document.getElementById('card-count').value = Math.min(parseInt(document.getElementById('card-count').value), poolSize);
+}
+
+// ═══════════════════════════════════════════════════════
+// FLASHCARDS
+// ═══════════════════════════════════════════════════════
+let deck = [], deckIdx = 0, revealed = false, missedCards = [];
+let lastDeck = [];
+
+function buildDeck(weakOnly) {
+  let pool = selectedCat === 'all' ? KANJI : KANJI.filter(k => k.category === selectedCat);
+  if (weakOnly) pool = pool.filter(k => getRating(k.kanji) <= 3);
+  const num = Math.min(parseInt(document.getElementById('card-count').value) || 10, pool.length);
+  // Prioritise due cards then fill with others
+  const due = shuffle(pool.filter(k => isDue(k.kanji)));
+  const notDue = shuffle(pool.filter(k => !isDue(k.kanji)));
+  return [...due, ...notDue].slice(0, num);
+}
+
+function startFlashcards(weakOnly=false, repeatLast=false) {
+  deck = repeatLast ? shuffle([...lastDeck]) : buildDeck(weakOnly);
+  if (!deck.length) { alert('No cards available for that selection!'); return; }
+  lastDeck = [...deck];
+  deckIdx = 0; missedCards = [];
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-flashcard').classList.add('active');
+  loadCard();
+}
+
+function loadCard() {
+  revealed = false;
+  const k = deck[deckIdx];
+  const pct = Math.round((deckIdx / deck.length) * 100);
+  document.getElementById('fc-fill').style.width = pct + '%';
+  document.getElementById('fc-counter').textContent = `${deckIdx+1} / ${deck.length}`;
+  document.getElementById('fc-cat-tag').textContent = k.category;
+  document.getElementById('fc-kanji').textContent = k.kanji;
+  document.getElementById('cardWrap').classList.remove('revealed');
+  document.getElementById('reveal-btn').classList.remove('hidden');
+  document.getElementById('answer-btns').classList.add('hidden');
+  // Pre-fill back while hidden
+  document.getElementById('cb-meaning').textContent = k.meaning;
+  document.getElementById('cb-reading').textContent = k.hiragana;
+  document.getElementById('cb-kanji-mini').textContent = k.kanji;
+  document.getElementById('cb-examples').innerHTML = k.examples.map(ex =>
+    `<li><span style="flex:1">${ex}</span></li>`
+  ).join('');
+}
+
+function revealCard() {
+  if (revealed) return;
+  revealed = true;
+  document.getElementById('cardWrap').classList.add('revealed');
+  document.getElementById('reveal-btn').classList.add('hidden');
+  document.getElementById('answer-btns').classList.remove('hidden');
+}
+
+function rateCard(r) {
+  const k = deck[deckIdx];
+  setRating(k.kanji, r);
+  if (r <= 3) missedCards.push(k);
+  saveProgress();
+  deckIdx++;
+  if (deckIdx < deck.length) {
+    loadCard();
+  } else {
+    showSummary();
+  }
+}
+
+function endSession() {
+  showPage('home');
+  navTo('home');
+}
+
+function showSummary() {
+  const known = deck.length - missedCards.length;
+  const pct = Math.round(known / deck.length * 100);
+  document.getElementById('sum-emoji').textContent = BOWL_EMOJI[Math.min(5, Math.floor(pct/20))];
+  document.getElementById('sum-sub').textContent = `${deck.length} cards reviewed`;
+  document.getElementById('sum-known').textContent = known;
+  document.getElementById('sum-weak').textContent = missedCards.length;
+  document.getElementById('sum-retry-sub').textContent = `${missedCards.length} card${missedCards.length!==1?'s':''} rated 1–3`;
+  const retryBtn = document.getElementById('sum-retry-btn');
+  retryBtn.style.opacity = missedCards.length > 0 ? '1' : '0.4';
+  retryBtn.style.pointerEvents = missedCards.length > 0 ? 'auto' : 'none';
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-summary').classList.add('active');
+  document.getElementById('fc-fill').style.width = '100%';
+  saveProgress();
+}
+
+function retryWeak() {
+  if (!missedCards.length) return;
+  deck = shuffle([...missedCards]);
+  lastDeck = [...deck];
+  deckIdx = 0; missedCards = [];
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-flashcard').classList.add('active');
+  loadCard();
+}
+
+// ═══════════════════════════════════════════════════════
+// BROWSE
+// ═══════════════════════════════════════════════════════
+let browseFilter = 'all';
+
+function renderBrowse() {
+  // Filter tabs
+  const filterRow = document.getElementById('browse-filters');
+  const allCats = ['all', ...CATEGORIES];
+  filterRow.innerHTML = allCats.map(cat => {
+    const label = cat === 'all' ? 'All' : cat;
+    return `<button class="filter-tab ${browseFilter===cat?'active':''}" onclick="setBrowseFilter('${cat}',this)">${label}</button>`;
+  }).join('');
+  renderBrowseList();
+}
+
+function setBrowseFilter(cat, btn) {
+  browseFilter = cat;
+  document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  renderBrowseList();
+}
+
+function renderBrowseList() {
+  const list = browseFilter === 'all' ? KANJI : KANJI.filter(k => k.category === browseFilter);
+  const rLabels = ['New','①','②','③','④','⑤'];
+  const rCls = ['new','r1','r2','r3','r4','r5'];
+  document.getElementById('browse-list').innerHTML = list.map((k,i) => {
+    const r = getRating(k.kanji);
+    return `<div class="browse-item" onclick="showDetail('${k.kanji}')">
+      <div class="browse-kanji">${k.kanji}</div>
+      <div class="browse-info">
+        <div class="browse-meaning">${k.meaning}</div>
+        <div class="browse-hira">${k.hiragana}</div>
+      </div>
+      <span class="browse-rating ${rCls[r]}">${rLabels[r]}</span>
+    </div>`;
+  }).join('');
+}
+
+function showDetail(kanji) {
+  const k = KANJI.find(x => x.kanji === kanji);
+  if (!k) return;
+  document.getElementById('det-kanji').textContent = k.kanji;
+  document.getElementById('det-meaning').textContent = k.meaning;
+  document.getElementById('det-reading').textContent = k.hiragana;
+  document.getElementById('det-cat').textContent = k.category;
+  document.getElementById('det-examples').innerHTML = k.examples.map(ex =>
+    `<li>${ex}</li>`
+  ).join('');
+  const r = getRating(k.kanji);
+  const rv = document.getElementById('det-rating');
+  rv.textContent = RATING_NAMES[r];
+  rv.style.color = RATING_COLORS[r];
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-detail').classList.add('active');
+}
+
+// ═══════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════
+renderHome();
+</script>
+</body>
+</html>

@@ -1,0 +1,1975 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>漢字 Kanji Learner</title>
+<style>
+  /* ── Offline-ready system font stacks (no network required) ── */
+  /* Japanese: uses system fonts on every platform */
+  /* iOS/macOS: Hiragino Sans, Android: Noto Sans CJK, Windows: Meiryo/Yu Gothic */
+
+  :root {
+    --bg:        #F5F0E8;
+    --surface:   #FFFFFF;
+    --border:    #D8D0C4;
+    --text:      #1A1410;
+    --text2:     #5A5248;
+    --accent:    #C0392B;
+    --accent2:   #8B2020;
+    --good:      #1E7A4A;
+    --bad:       #C0392B;
+    --kanji-bg:  #1A1410;
+    --kanji-fg:  #F5F0E8;
+    --btn:       #1A1410;
+    --btn-txt:   #F5F0E8;
+    --shadow:    rgba(0,0,0,0.12);
+    --tag-bg:    #EAE4DA;
+  }
+  [data-theme="dark"] {
+    --bg:        #0F0F0F;
+    --surface:   #1C1C1C;
+    --border:    #2E2E2E;
+    --text:      #F0EDE8;
+    --text2:     #9A9490;
+    --accent:    #E05A4A;
+    --accent2:   #FF7060;
+    --good:      #3DB870;
+    --bad:       #E05A4A;
+    --kanji-bg:  #F0EDE8;
+    --kanji-fg:  #0F0F0F;
+    --btn:       #F0EDE8;
+    --btn-txt:   #0F0F0F;
+    --shadow:    rgba(0,0,0,0.5);
+    --tag-bg:    #252525;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: 'SF Mono', ui-monospace, 'Cascadia Code', Menlo, Consolas, 'Courier New', monospace;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    min-height: 100vh;
+    transition: background 0.3s, color 0.3s;
+    overflow-x: hidden;
+  }
+
+  /* ── Top bar ── */
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 20px;
+    border-bottom: 1.5px solid var(--border);
+    position: sticky; top: 0; z-index: 100;
+    background: var(--bg);
+  }
+  .topbar-title {
+    font-family: 'Georgia', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    font-size: 1.25rem;
+    letter-spacing: 0.02em;
+    color: var(--text);
+  }
+  .topbar-title span { color: var(--accent); }
+  .icon-btn {
+    background: none; border: none; cursor: pointer;
+    color: var(--text); font-size: 1.3rem; padding: 6px;
+    border-radius: 8px; transition: background 0.15s;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .icon-btn:active { background: var(--border); }
+
+  /* ── Pages ── */
+  .page { display: none; padding: 20px; max-width: 480px; margin: 0 auto; }
+  /* Flashcard page: simple block, card + ratings always on screen */
+  #page-flashcard.active { display: block; }
+  .page.active { display: block; }
+
+  /* ── Home ── */
+  .progress-bar-wrap {
+    background: var(--tag-bg); border-radius: 99px;
+    height: 8px; overflow: hidden; margin: 6px 0 18px;
+  }
+  .progress-bar-fill {
+    height: 100%; background: var(--accent);
+    border-radius: 99px; transition: width 0.6s ease;
+  }
+  .stats-row {
+    display: grid; grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px; margin-bottom: 24px;
+  }
+  .stat-card {
+    background: var(--surface); border: 1.5px solid var(--border);
+    border-radius: 12px; padding: 14px 10px; text-align: center;
+  }
+  .stat-num {
+    font-family: 'Georgia', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    font-size: 1.7rem; color: var(--accent); line-height: 1;
+  }
+  .stat-label { font-size: 0.62rem; color: var(--text2); margin-top: 4px; letter-spacing: 0.08em; text-transform: uppercase; }
+
+  .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .menu-btn {
+    background: var(--surface); border: 1.5px solid var(--border);
+    border-radius: 16px; padding: 20px 16px; text-align: left;
+    cursor: pointer; transition: all 0.15s; color: var(--text);
+  }
+  .menu-btn:active { transform: scale(0.97); background: var(--tag-bg); }
+  .menu-btn .icon { font-size: 1.8rem; display: block; margin-bottom: 8px; }
+  .menu-btn .label { font-size: 0.85rem; font-weight: 500; display: block; }
+  .menu-btn .sub { font-size: 0.7rem; color: var(--text2); display: block; margin-top: 2px; }
+  .menu-btn.full { grid-column: span 2; }
+
+  /* ── Section header ── */
+  .section-head {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 20px;
+  }
+  .back-btn {
+    background: var(--tag-bg); border: none; border-radius: 99px;
+    padding: 8px 14px; cursor: pointer; color: var(--text);
+    font-size: 0.85rem; font-family: inherit; transition: background 0.15s;
+  }
+  .back-btn:active { background: var(--border); }
+  .section-title {
+    font-family: 'Georgia', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    font-size: 1.2rem; color: var(--text);
+  }
+
+  /* ── Flashcard ── */
+  .deck-options { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+  .deck-opt {
+    background: var(--surface); border: 1.5px solid var(--border);
+    border-radius: 14px; padding: 16px 18px; cursor: pointer;
+    display: flex; align-items: center; gap: 14px;
+    transition: all 0.15s; color: var(--text);
+  }
+  .deck-opt.selected { border-color: var(--accent); background: rgba(192,57,43,0.1); }
+  .deck-opt.disabled { opacity: 0.4; pointer-events: none; }
+  .deck-opt:active { transform: scale(0.98); }
+  .deck-opt .opt-icon { font-size: 1.4rem; flex-shrink: 0; }
+  .deck-opt .opt-label { font-size: 0.9rem; font-weight: 500; }
+  .deck-opt .opt-sub { font-size: 0.72rem; color: var(--text2); margin-top: 2px; }
+
+  .num-row {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 22px; background: var(--surface);
+    border: 1.5px solid var(--border); border-radius: 14px; padding: 14px 18px;
+  }
+  .num-row label { font-size: 0.85rem; color: var(--text2); flex: 1; }
+  .num-input {
+    background: var(--tag-bg); border: 1.5px solid var(--border);
+    border-radius: 10px; padding: 8px 14px; width: 70px; text-align: center;
+    font-family: inherit; font-size: 1rem; color: var(--text);
+    outline: none;
+  }
+  .num-input:focus { border-color: var(--accent); }
+
+  /* ── Card face ── */
+  .card-counter { font-size: 0.75rem; color: var(--text2); margin-bottom: 16px; letter-spacing: 0.06em; }
+  /* ── Single-panel card: front and back share same space ── */
+  .card-wrap {
+    margin-bottom: 14px; border-radius: 24px;
+    border: 2px solid var(--border);
+    box-shadow: 0 8px 32px var(--shadow);
+    overflow: hidden; cursor: pointer; user-select: none;
+  }
+  /* FRONT: giant kanji centred */
+  .card-face {
+    background: var(--kanji-bg);
+    height: 200px; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 20px;
+  }
+  /* BACK: answer content, scrollable internally if very long */
+  .card-back {
+    background: var(--surface);
+    max-height: 200px; overflow-y: auto;
+    padding: 16px 18px;
+    display: none;
+  }
+  /* Revealed state: swap panels */
+  .card-wrap.revealed .card-face { display: none; }
+  .card-wrap.revealed .card-back { display: block; }
+  .kanji-giant {
+    font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', 'Yu Gothic', Meiryo, sans-serif;
+    font-size: clamp(72px, 22vw, 120px);
+    color: var(--kanji-fg);
+    line-height: 1;
+    font-weight: 700;
+  }
+  .card-hint {
+    font-size: 0.72rem; color: rgba(245,240,232,0.4);
+    margin-top: 16px; letter-spacing: 0.1em; text-transform: uppercase;
+  }
+  .back-kanji-mini {
+    font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', 'Yu Gothic', Meiryo, sans-serif;
+    font-size: 1.8rem; font-weight: 700;
+    color: var(--accent); float: right; margin: -2px 0 6px 10px;
+  }
+  .back-meaning {
+    font-family: 'Georgia', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    font-size: 1.3rem; color: var(--text); margin-bottom: 3px;
+    clear: both;
+  }
+  .back-hiragana {
+    font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', 'Yu Gothic', Meiryo, sans-serif;
+    font-size: 0.9rem; color: var(--accent); margin-bottom: 10px;
+    font-weight: 400;
+  }
+  .back-divider { height: 1.5px; background: var(--border); margin-bottom: 8px; }
+  .back-examples { list-style: none; }
+  .back-examples li {
+    font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', 'Yu Gothic', Meiryo, sans-serif;
+    font-size: 0.82rem; color: var(--text);
+    padding: 5px 0; border-bottom: 1px solid var(--border);
+    line-height: 1.5;
+  }
+  .back-examples li:last-child { border-bottom: none; }
+  .back-tag {
+    display: inline-block; background: var(--tag-bg);
+    border-radius: 6px; padding: 2px 8px;
+    font-size: 0.65rem; color: var(--text2);
+    margin-top: 12px; letter-spacing: 0.06em;
+  }
+
+  /* ── Answer buttons ── */
+  /* ── 5-level rating buttons ── */
+  .rating-label {
+    font-size: 0.72rem; color: var(--text2); text-align: center;
+    margin-top: 4px; letter-spacing: .06em; text-transform: uppercase;
+  }
+  .rating-btns {
+    display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px;
+    margin-top: 4px;
+  }
+  .rating-btn {
+    border: 1.5px solid var(--border); border-radius: 14px;
+    padding: 12px 4px 10px; font-family: inherit; font-weight: 600;
+    cursor: pointer; transition: all 0.15s;
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    background: var(--surface); color: var(--text);
+  }
+  .rating-btn:active { transform: scale(0.93); }
+  .rating-btn .r-num  { font-size: 1.1rem; line-height: 1; }
+  .rating-btn .r-lbl  { font-size: 0.58rem; opacity: 0.75; text-align: center; line-height: 1.2; }
+  .rating-btn[data-r="1"] { border-color: #C0392B; color: #C0392B; background: rgba(192,57,43,0.1); }
+  .rating-btn[data-r="2"] { border-color: #E07020; color: #E07020; background: rgba(224,112,32,0.1); }
+  .rating-btn[data-r="3"] { border-color: #C8A000; color: #A07800; background: rgba(200,160,0,0.1); }
+  .rating-btn[data-r="4"] { border-color: #2E8B57; color: #2E8B57; background: rgba(46,139,87,0.1); }
+  .rating-btn[data-r="5"] { border-color: #1565C0; color: #1565C0; background: rgba(21,101,192,0.1); }
+  /* keep old names for ex-answer-btns */
+  .ans-btn {
+    border: none; border-radius: 16px; padding: 18px;
+    font-size: 1rem; font-family: inherit; font-weight: 500;
+    cursor: pointer; transition: all 0.15s;
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+  }
+  .ans-btn:active { transform: scale(0.96); }
+  .ans-btn.wrong-btn { background: rgba(192,57,43,0.12); color: var(--bad); border: 1.5px solid rgba(192,57,43,0.3); }
+  .ans-btn.good-btn  { background: rgba(30,122,74,0.12); color: var(--good); border: 1.5px solid rgba(30,122,74,0.3); }
+  .ans-btn .ans-icon { font-size: 1.5rem; }
+  .ans-btn .ans-label { font-size: 0.75rem; opacity: 0.8; }
+  .reveal-btn {
+    width: 100%; border: none; border-radius: 16px;
+    padding: 20px; font-size: 1rem; font-family: inherit; font-weight: 500;
+    background: var(--btn); color: var(--btn-txt);
+    cursor: pointer; transition: all 0.15s; letter-spacing: 0.04em;
+    margin-top: 4px;
+  }
+  .reveal-btn:active { transform: scale(0.98); opacity: 0.9; }
+
+  /* ── Session summary ── */
+  .summary-card {
+    background: var(--surface); border: 1.5px solid var(--border);
+    border-radius: 20px; padding: 24px; margin-bottom: 16px; text-align: center;
+  }
+  .summary-score {
+    font-family: 'Georgia', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    font-size: 3rem; color: var(--accent); line-height: 1;
+  }
+  .summary-label { font-size: 0.8rem; color: var(--text2); margin-top: 6px; letter-spacing: 0.08em; }
+  .summary-row { display: flex; gap: 12px; margin-bottom: 14px; }
+  .summary-stat {
+    flex: 1; background: var(--tag-bg); border-radius: 12px; padding: 14px;
+    text-align: center;
+  }
+  .summary-stat .n { font-size: 1.5rem; font-weight: 700; }
+  .summary-stat .l { font-size: 0.65rem; color: var(--text2); margin-top: 2px; text-transform: uppercase; letter-spacing: 0.06em; }
+  .summary-stat.good .n { color: var(--good); }
+  .summary-stat.bad  .n { color: var(--bad); }
+  .action-btns { display: flex; flex-direction: column; gap: 10px; }
+  .action-btn {
+    border: 1.5px solid var(--border); border-radius: 14px;
+    padding: 16px 20px; background: var(--surface);
+    font-family: inherit; font-size: 0.9rem; color: var(--text);
+    cursor: pointer; text-align: left; display: flex; align-items: center; gap: 12px;
+    transition: all 0.15s;
+  }
+  .action-btn:active { background: var(--tag-bg); }
+  .action-btn.primary { background: var(--btn); color: var(--btn-txt); border-color: var(--btn); }
+  .action-btn .a-icon { font-size: 1.2rem; flex-shrink: 0; }
+  .action-btn .a-label { font-weight: 500; }
+  .action-btn .a-sub { font-size: 0.72rem; opacity: 0.7; display: block; margin-top: 2px; }
+
+  /* ── Quiz ── */
+  .quiz-q {
+    background: var(--kanji-bg); border-radius: 20px;
+    padding: 30px; text-align: center; margin-bottom: 20px;
+    min-height: 140px; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    box-shadow: 0 4px 20px var(--shadow);
+  }
+  .quiz-q .kanji-lg {
+    font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', 'Yu Gothic', Meiryo, sans-serif;
+    font-size: clamp(60px, 18vw, 100px);
+    color: var(--kanji-fg); font-weight: 700; line-height: 1;
+  }
+  .quiz-q .meaning-lg {
+    font-family: 'Georgia', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    font-size: 1.6rem; color: var(--kanji-fg); line-height: 1.3;
+  }
+  .quiz-opts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .quiz-opt {
+    background: var(--surface); border: 1.5px solid var(--border);
+    border-radius: 14px; padding: 16px 12px; text-align: center;
+    cursor: pointer; font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', 'Yu Gothic', Meiryo, sans-serif;
+    font-size: 0.9rem; color: var(--text); transition: all 0.15s;
+    line-height: 1.3;
+  }
+  .quiz-opt:active { transform: scale(0.97); }
+  .quiz-opt.correct { background: rgba(30,122,74,0.15); border-color: var(--good); color: var(--good); }
+  .quiz-opt.wrong   { background: rgba(192,57,43,0.15); border-color: var(--bad); color: var(--bad); }
+  .quiz-opt.kanji-opt { font-size: 1.6rem; font-weight: 700; min-height: 72px; display: flex; align-items: center; justify-content: center; }
+  .quiz-next {
+    width: 100%; margin-top: 16px; border: none; border-radius: 14px;
+    padding: 18px; background: var(--btn); color: var(--btn-txt);
+    font-family: inherit; font-size: 0.95rem; font-weight: 500;
+    cursor: pointer; display: none;
+  }
+  .quiz-next.show { display: block; }
+
+  /* ── Browse ── */
+  .browse-grid { display: flex; flex-direction: column; gap: 8px; }
+  .browse-item {
+    background: var(--surface); border: 1.5px solid var(--border);
+    border-radius: 14px; padding: 14px 16px;
+    display: flex; align-items: center; gap: 14px;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .browse-item:active { background: var(--tag-bg); }
+  .browse-kanji {
+    font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', 'Yu Gothic', Meiryo, sans-serif;
+    font-size: 2rem; font-weight: 700; color: var(--accent);
+    width: 48px; text-align: center; flex-shrink: 0;
+  }
+  .browse-info { flex: 1; min-width: 0; }
+  .browse-meaning { font-size: 0.9rem; font-weight: 500; color: var(--text); }
+  .browse-hira { font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', 'Yu Gothic', Meiryo, sans-serif; font-size: 0.75rem; color: var(--text2); margin-top: 2px; }
+  .browse-pct {
+    font-size: 0.7rem; font-weight: 700; border-radius: 8px;
+    padding: 4px 8px; flex-shrink: 0;
+  }
+  .browse-pct.good { background: rgba(30,122,74,0.15); color: var(--good); }
+  .browse-pct.mid  { background: rgba(232,160,32,0.15); color: #C07010; }
+  .browse-pct.bad  { background: rgba(192,57,43,0.15); color: var(--bad); }
+  .browse-pct.new  { background: var(--tag-bg); color: var(--text2); }
+
+  /* ── Detail ── */
+  .detail-kanji {
+    font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', 'Yu Gothic', Meiryo, sans-serif;
+    font-size: clamp(80px, 28vw, 140px); font-weight: 700;
+    color: var(--accent); text-align: center;
+    line-height: 1; margin: 10px 0 20px;
+  }
+  .detail-row { margin-bottom: 18px; }
+  .detail-lbl { font-size: 0.65rem; color: var(--text2); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 4px; }
+  .detail-val { font-size: 1rem; color: var(--text); font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', 'Yu Gothic', Meiryo, sans-serif; }
+  .detail-val.big { font-family: 'Georgia', 'Palatino Linotype', 'Book Antiqua', Palatino, serif; font-size: 1.4rem; }
+  .example-list { list-style: none; }
+  .example-list li { padding: 10px 0; border-bottom: 1px solid var(--border); font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', 'Yu Gothic', Meiryo, sans-serif; font-size: 0.88rem; color: var(--text); line-height: 1.5; }
+  .example-list li:last-child { border-bottom: none; }
+
+  /* ── Stats ── */
+  .stats-big { font-family: 'Georgia', 'Palatino Linotype', 'Book Antiqua', Palatino, serif; font-size: 2.5rem; color: var(--accent); }
+  .stats-section { background: var(--surface); border: 1.5px solid var(--border); border-radius: 16px; padding: 18px; margin-bottom: 14px; }
+  .stats-section h3 { font-size: 0.7rem; color: var(--text2); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 14px; }
+  .progress-big { height: 10px; background: var(--tag-bg); border-radius: 99px; overflow: hidden; margin: 8px 0 6px; }
+  .progress-big-fill { height: 100%; background: var(--accent); border-radius: 99px; transition: width 0.8s ease; }
+  .weak-list { list-style: none; }
+  .weak-list li { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 0.85rem; }
+  .weak-list li:last-child { border-bottom: none; }
+  .weak-kanji { font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', 'Yu Gothic', Meiryo, sans-serif; font-size: 1.3rem; color: var(--accent); width: 32px; }
+
+  /* ── Utility ── */
+  .label-tag {
+    display: inline-block; background: var(--tag-bg); border-radius: 6px;
+    padding: 3px 10px; font-size: 0.7rem; color: var(--text2);
+    letter-spacing: 0.06em; margin-bottom: 18px;
+  }
+  .full-btn {
+    width: 100%; border: none; border-radius: 14px;
+    padding: 18px; background: var(--btn); color: var(--btn-txt);
+    font-family: inherit; font-size: 1rem; font-weight: 500;
+    cursor: pointer; margin-top: 8px; transition: opacity 0.15s;
+  }
+  .full-btn:active { opacity: 0.85; }
+  .full-btn.outline { background: var(--surface); color: var(--text); border: 1.5px solid var(--border); }
+  .spacer { height: 24px; }
+  .hidden { display: none !important; }
+  h2 { font-family: 'Georgia', 'Palatino Linotype', 'Book Antiqua', Palatino, serif; font-size: 1.1rem; margin-bottom: 14px; }
+  .tag { display: inline-block; background: var(--tag-bg); border-radius: 6px; padding: 2px 8px; font-size: 0.68rem; color: var(--text2); margin-right: 4px; }
+
+  /* ── Examples browser ── */
+  .ex-filter-row { display:flex; gap:8px; margin-bottom:16px; overflow-x:auto; padding-bottom:4px; }
+  .ex-filter-btn {
+    flex-shrink:0; background:var(--surface); border:1.5px solid var(--border);
+    border-radius:99px; padding:6px 14px; font-family:inherit; font-size:0.78rem;
+    color:var(--text2); cursor:pointer; white-space:nowrap; transition:all .15s;
+  }
+  .ex-filter-btn.active { background:var(--btn); color:var(--btn-txt); border-color:var(--btn); }
+  .ex-item {
+    background:var(--surface); border:1.5px solid var(--border);
+    border-radius:14px; padding:14px 16px; margin-bottom:8px;
+    display:flex; align-items:center; gap:12px;
+  }
+  .ex-item-body { flex:1; min-width:0; }
+  .ex-word { font-family:'Noto Sans JP',sans-serif; font-size:1.05rem; font-weight:700; color:var(--text); }
+  .ex-reading { font-family:'Noto Sans JP',sans-serif; font-size:0.78rem; color:var(--accent); margin-top:2px; }
+  .ex-eng { font-size:0.8rem; color:var(--text2); margin-top:2px; }
+  .ex-kanji-tag { font-family:'Noto Sans JP',sans-serif; font-size:1.2rem; color:var(--accent); width:32px; text-align:center; flex-shrink:0; }
+  .fav-btn {
+    background:none; border:none; font-size:1.4rem; cursor:pointer;
+    padding:4px; flex-shrink:0; transition:transform .15s;
+    color:var(--text2);
+  }
+  .fav-btn:active { transform:scale(1.3); }
+  .fav-btn.saved { color:#E8A020; }
+
+  /* ── Sets manager ── */
+  .sets-list { display:flex; flex-direction:column; gap:10px; }
+  .set-card {
+    background:var(--surface); border:1.5px solid var(--border);
+    border-radius:14px; padding:14px 16px; display:flex; align-items:center; gap:12px;
+    cursor:pointer; transition:all .15s;
+  }
+  .set-card:active { background:var(--tag-bg); }
+  .set-card .set-icon { font-size:1.4rem; flex-shrink:0; }
+  .set-card .set-name { font-size:0.95rem; font-weight:500; color:var(--text); }
+  .set-card .set-count { font-size:0.72rem; color:var(--text2); margin-top:2px; }
+  .set-card .set-del { margin-left:auto; background:none; border:none; font-size:1.1rem; color:var(--text2); cursor:pointer; padding:4px 8px; flex-shrink:0; }
+  .new-set-row {
+    display:flex; gap:8px; margin-bottom:16px;
+  }
+  .set-name-input {
+    flex:1; background:var(--surface); border:1.5px solid var(--border);
+    border-radius:10px; padding:10px 14px; font-family:inherit; font-size:0.9rem;
+    color:var(--text); outline:none;
+  }
+  .set-name-input:focus { border-color:var(--accent); }
+  .set-create-btn {
+    background:var(--btn); color:var(--btn-txt); border:none; border-radius:10px;
+    padding:10px 16px; font-family:inherit; font-size:0.9rem; cursor:pointer;
+  }
+
+  /* ── Set detail / study ── */
+  .set-ex-item {
+    background:var(--surface); border:1.5px solid var(--border);
+    border-radius:14px; padding:12px 16px; margin-bottom:8px;
+    display:flex; align-items:center; gap:10px;
+  }
+  .set-ex-remove { background:none; border:none; color:var(--bad); font-size:1rem; cursor:pointer; margin-left:auto; padding:4px 8px; }
+  .study-mode-row { display:flex; gap:10px; margin-bottom:16px; }
+  .study-mode-btn {
+    flex:1; background:var(--surface); border:1.5px solid var(--border);
+    border-radius:12px; padding:12px 8px; text-align:center; font-family:inherit;
+    font-size:0.8rem; color:var(--text); cursor:pointer; transition:all .15s;
+  }
+  .study-mode-btn.active { border-color:var(--accent); background:rgba(192,57,43,0.1); color:var(--accent); }
+
+  /* ── Example flashcard ── */
+  .ex-card-face {
+    background:var(--kanji-bg); border-radius:20px;
+    min-height:200px; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; padding:30px;
+    margin-bottom:16px; cursor:pointer;
+    box-shadow:0 6px 24px var(--shadow);
+    transition: transform .15s;
+  }
+  .ex-card-face:active { transform:scale(0.98); }
+  .ex-card-word { font-family:'Noto Sans JP',sans-serif; font-size:clamp(36px,12vw,64px); font-weight:700; color:var(--kanji-fg); }
+  .ex-card-hint { font-size:0.7rem; color:rgba(245,240,232,0.4); margin-top:12px; letter-spacing:.1em; text-transform:uppercase; }
+  .ex-card-back {
+    background:var(--surface); border:1.5px solid var(--border);
+    border-radius:20px; padding:24px; margin-bottom:16px;
+    box-shadow:0 6px 24px var(--shadow);
+  }
+  .ex-card-back .word-big { font-family:'Noto Sans JP',sans-serif; font-size:2rem; font-weight:700; color:var(--accent); margin-bottom:6px; }
+  .ex-card-back .reading-line { font-family:'Noto Sans JP',sans-serif; font-size:1rem; color:var(--accent); margin-bottom:10px; }
+  .ex-card-back .meaning-line { font-size:1.1rem; color:var(--text); font-family:'DM Serif Display',serif; }
+  .ex-card-back .from-kanji { font-size:0.72rem; color:var(--text2); margin-top:10px; }
+
+  /* ── Save-to-set modal ── */
+  .modal-overlay {
+    position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:200;
+    display:flex; align-items:flex-end; justify-content:center;
+    opacity:0; pointer-events:none; transition:opacity .2s;
+  }
+  .modal-overlay.open { opacity:1; pointer-events:all; }
+  .modal-sheet {
+    background:var(--surface); border-radius:20px 20px 0 0;
+    padding:24px 20px 40px; width:100%; max-width:480px;
+    transform:translateY(100%); transition:transform .3s cubic-bezier(.4,0,.2,1);
+    max-height:80vh; overflow-y:auto;
+  }
+  .modal-overlay.open .modal-sheet { transform:translateY(0); }
+  .modal-title { font-family:'DM Serif Display',serif; font-size:1.1rem; margin-bottom:16px; }
+  .modal-set-opt {
+    display:flex; align-items:center; gap:12px;
+    padding:12px 0; border-bottom:1px solid var(--border); cursor:pointer;
+  }
+  .modal-set-opt:last-child { border-bottom:none; }
+  .modal-set-opt .m-icon { font-size:1.2rem; }
+  .modal-set-opt .m-name { font-size:0.9rem; color:var(--text); }
+  .modal-set-opt .m-tick { margin-left:auto; color:var(--good); font-size:1.1rem; }
+  .modal-new-row { display:flex; gap:8px; margin-top:14px; }
+
+
+  /* ── Writing practice ── */
+  .write-card {
+    background: var(--surface); border: 1.5px solid var(--border);
+    border-radius: 20px; padding: 28px 24px; margin-bottom: 16px;
+    box-shadow: 0 4px 20px var(--shadow);
+  }
+  .write-prompt-word {
+    font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', 'Yu Gothic', Meiryo, sans-serif;
+    font-size: clamp(40px, 14vw, 72px); font-weight: 700;
+    color: var(--accent); text-align: center; line-height: 1;
+    margin-bottom: 8px;
+  }
+  .write-prompt-meaning {
+    font-family: 'Georgia', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    font-size: 1.1rem; color: var(--text2); text-align: center;
+    margin-bottom: 20px;
+  }
+  .write-input-wrap { position: relative; }
+  .write-input {
+    width: 100%; background: var(--tag-bg); border: 2px solid var(--border);
+    border-radius: 14px; padding: 16px 18px; font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', 'Yu Gothic', Meiryo, sans-serif;
+    font-size: 1.3rem; color: var(--text); outline: none; text-align: center;
+    transition: border-color .2s;
+  }
+  .write-input:focus { border-color: var(--accent); }
+  .write-input.correct { border-color: var(--good); background: rgba(30,122,74,0.08); }
+  .write-input.wrong   { border-color: var(--bad);  background: rgba(192,57,43,0.08); }
+  .write-hint-row { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; min-height: 24px; }
+  .write-hint-text { font-size: 0.78rem; color: var(--text2); }
+  .write-correct-ans { font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', 'Yu Gothic', Meiryo, sans-serif; font-size: 1rem; color: var(--good); font-weight: 700; }
+  .write-wrong-ans   { font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', 'Yu Gothic', Meiryo, sans-serif; font-size: 1rem; color: var(--bad); }
+  .write-check-btn {
+    width: 100%; border: none; border-radius: 14px; padding: 18px;
+    background: var(--btn); color: var(--btn-txt); font-family: inherit;
+    font-size: 1rem; font-weight: 500; cursor: pointer; margin-top: 12px;
+    transition: opacity .15s;
+  }
+  .write-check-btn:active { opacity: 0.85; }
+  .write-next-btn {
+    width: 100%; border: 1.5px solid var(--border); border-radius: 14px;
+    padding: 16px; background: var(--surface); color: var(--text);
+    font-family: inherit; font-size: 0.95rem; cursor: pointer;
+    margin-top: 10px; display: none;
+  }
+  .write-next-btn.show { display: block; }
+  .write-streak { font-size: 0.72rem; color: var(--text2); text-align: center; margin-bottom: 14px; letter-spacing: .06em; }
+  .write-skip-btn {
+    background: none; border: none; color: var(--text2); font-size: 0.78rem;
+    cursor: pointer; padding: 4px 8px; font-family: inherit; text-decoration: underline;
+  }
+
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="topbar-title">漢<span>字</span></div>
+  <div style="display:flex;gap:4px">
+    <button class="icon-btn" id="themeToggle" title="Toggle theme">☀️</button>
+    <button class="icon-btn" onclick="showPage('stats')">📊</button>
+  </div>
+</div>
+
+<!-- HOME -->
+<div class="page active" id="page-home">
+  <div class="spacer"></div>
+  <div class="stats-row" id="home-stats"></div>
+  <div class="progress-bar-wrap"><div class="progress-bar-fill" id="home-prog"></div></div>
+  <div class="menu-grid">
+    <button class="menu-btn" onclick="showPage('flashcard-setup')">
+      <span class="icon">📚</span>
+      <span class="label">Flashcards</span>
+      <span class="sub">Flip & review</span>
+    </button>
+    <button class="menu-btn" onclick="showPage('quiz-setup')">
+      <span class="icon">🧠</span>
+      <span class="label">Quiz</span>
+      <span class="sub">Test yourself</span>
+    </button>
+    <button class="menu-btn" onclick="showPage('examples')">
+      <span class="icon">📝</span>
+      <span class="label">Examples</span>
+      <span class="sub">All words & save</span>
+    </button>
+    <button class="menu-btn" onclick="showPage('sets')">
+      <span class="icon">🗂️</span>
+      <span class="label">Study Sets</span>
+      <span class="sub">Your saved words</span>
+    </button>
+    <button class="menu-btn" onclick="showPage('browse')">
+      <span class="icon">📖</span>
+      <span class="label">Browse</span>
+      <span class="sub">All kanji</span>
+    </button>
+    <button class="menu-btn" onclick="showPage('stats')">
+      <span class="icon">📊</span>
+      <span class="label">Progress</span>
+      <span class="sub">Your stats</span>
+    </button>
+  </div>
+</div>
+
+<!-- FLASHCARD SETUP -->
+<div class="page" id="page-flashcard-setup">
+  <div class="section-head">
+    <button class="back-btn" onclick="showPage('home')">← Back</button>
+    <div class="section-title">Flashcards</div>
+  </div>
+  <h2>Choose deck</h2>
+  <div class="deck-options" id="deck-options">
+    <div class="deck-opt selected" data-deck="random" onclick="selectDeck(this,'random')">
+      <span class="opt-icon">🎲</span>
+      <div><div class="opt-label">Random set</div><div class="opt-sub">Fresh shuffle every time</div></div>
+    </div>
+    <div class="deck-opt" data-deck="repeat" id="opt-repeat" onclick="selectDeck(this,'repeat')">
+      <span class="opt-icon">🔁</span>
+      <div><div class="opt-label">Repeat last set</div><div class="opt-sub" id="repeat-sub">No previous set yet</div></div>
+    </div>
+    <div class="deck-opt" data-deck="srs" onclick="selectDeck(this,'srs')">
+      <span class="opt-icon">🎯</span>
+      <div><div class="opt-label">Due for review</div><div class="opt-sub" id="srs-sub">Loading...</div></div>
+    </div>
+    <div class="deck-opt" data-deck="weak" onclick="selectDeck(this,'weak')">
+      <span class="opt-icon">⚠️</span>
+      <div><div class="opt-label">Weak kanji (1–3)</div><div class="opt-sub" id="weak-sub">Loading...</div></div>
+    </div>
+    <div class="deck-opt" data-deck="correct_log" onclick="selectDeck(this,'correct_log')">
+      <span class="opt-icon">✅</span>
+      <div><div class="opt-label">Last answered correctly</div><div class="opt-sub" id="correct-log-sub">No history yet</div></div>
+    </div>
+    <div class="deck-opt" data-deck="wrong_log" onclick="selectDeck(this,'wrong_log')">
+      <span class="opt-icon">❌</span>
+      <div><div class="opt-label">Last answered wrong</div><div class="opt-sub" id="wrong-log-sub">No history yet</div></div>
+    </div>
+  </div>
+  <div class="num-row">
+    <label>Number of cards</label>
+    <input class="num-input" type="number" id="card-count" value="10" min="1" max="96">
+  </div>
+  <button class="full-btn" onclick="startFlashcards()">Start →</button>
+</div>
+
+<!-- FLASHCARD SESSION -->
+<div class="page" id="page-flashcard">
+  <div class="section-head">
+    <button class="back-btn" onclick="endFlashcardSession()">✕ End</button>
+    <div class="section-title" id="fc-title">Flashcards</div>
+  </div>
+  <div class="card-counter" id="fc-counter">Card 1 / 10</div>
+  <!-- Single-panel card: tap to swap front→back in place -->
+  <div class="card-wrap" id="cardWrap" onclick="revealCard()">
+    <div class="card-face" id="cardFront">
+      <div class="kanji-giant" id="fc-kanji"></div>
+      <div class="card-hint">Tap to reveal</div>
+    </div>
+    <div class="card-back" id="cardBack">
+      <div class="back-kanji-mini" id="cb-kanji-mini"></div>
+      <div class="back-meaning" id="cb-meaning"></div>
+      <div class="back-hiragana" id="cb-hiragana"></div>
+      <div class="back-divider"></div>
+      <ul class="back-examples" id="cb-examples"></ul>
+      <span class="back-tag" id="cb-tag"></span>
+    </div>
+  </div>
+  <div id="reveal-row">
+    <button class="reveal-btn" onclick="revealCard()">Tap card or press here to reveal</button>
+  </div>
+  <div class="hidden" id="answer-btns">
+    <div class="rating-label">How well did you know it?</div>
+    <div class="rating-btns" style="margin-top:8px">
+      <button class="rating-btn" data-r="1" onclick="answerCard(1)">
+        <span class="r-num">1</span><span class="r-lbl">Not at all</span>
+      </button>
+      <button class="rating-btn" data-r="2" onclick="answerCard(2)">
+        <span class="r-num">2</span><span class="r-lbl">Seen it before</span>
+      </button>
+      <button class="rating-btn" data-r="3" onclick="answerCard(3)">
+        <span class="r-num">3</span><span class="r-lbl">Almost remember</span>
+      </button>
+      <button class="rating-btn" data-r="4" onclick="answerCard(4)">
+        <span class="r-num">4</span><span class="r-lbl">Know it</span>
+      </button>
+      <button class="rating-btn" data-r="5" onclick="answerCard(5)">
+        <span class="r-num">5</span><span class="r-lbl">Expert!</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- FLASHCARD SUMMARY -->
+<div class="page" id="page-fc-summary">
+  <div class="section-head">
+    <button class="back-btn" onclick="showPage('home')">← Home</button>
+    <div class="section-title">Session Done</div>
+  </div>
+  <div class="summary-row">
+    <div class="summary-stat good"><div class="n" id="sum-known">0</div><div class="l">Known</div></div>
+    <div class="summary-stat bad"><div class="n" id="sum-missed">0</div><div class="l">Missed</div></div>
+    <div class="summary-stat"><div class="n" id="sum-total">0</div><div class="l">Total</div></div>
+  </div>
+  <div class="action-btns" id="summary-actions"></div>
+</div>
+
+<!-- QUIZ SETUP -->
+<div class="page" id="page-quiz-setup">
+  <div class="section-head">
+    <button class="back-btn" onclick="showPage('home')">← Back</button>
+    <div class="section-title">Quiz</div>
+  </div>
+  <h2>Quiz type</h2>
+  <div class="deck-options">
+    <div class="deck-opt selected" data-quiz="k2m" onclick="selectQuizType(this,'k2m')">
+      <span class="opt-icon">漢→</span>
+      <div><div class="opt-label">Kanji → Meaning</div><div class="opt-sub">See kanji, pick English</div></div>
+    </div>
+    <div class="deck-opt" data-quiz="m2k" onclick="selectQuizType(this,'m2k')">
+      <span class="opt-icon">→漢</span>
+      <div><div class="opt-label">Meaning → Kanji</div><div class="opt-sub">See English, pick kanji</div></div>
+    </div>
+    <div class="deck-opt" data-quiz="mixed" onclick="selectQuizType(this,'mixed')">
+      <span class="opt-icon">🔀</span>
+      <div><div class="opt-label">Mixed</div><div class="opt-sub">Randomised both ways</div></div>
+    </div>
+  </div>
+  <div class="num-row">
+    <label>Number of questions</label>
+    <input class="num-input" type="number" id="quiz-count" value="10" min="1" max="96">
+  </div>
+  <button class="full-btn" onclick="startQuiz()">Start →</button>
+</div>
+
+<!-- QUIZ SESSION -->
+<div class="page" id="page-quiz">
+  <div class="section-head">
+    <button class="back-btn" onclick="showPage('home')">✕ End</button>
+    <div class="section-title" id="quiz-progress-label">Q 1 / 10</div>
+  </div>
+  <div class="quiz-q" id="quizQ">
+    <div class="kanji-lg" id="quiz-kanji"></div>
+    <div class="meaning-lg hidden" id="quiz-meaning"></div>
+  </div>
+  <div class="quiz-opts" id="quizOpts"></div>
+  <button class="quiz-next" id="quizNext" onclick="nextQuestion()">Next →</button>
+</div>
+
+<!-- BROWSE -->
+<div class="page" id="page-browse">
+  <div class="section-head">
+    <button class="back-btn" onclick="showPage('home')">← Back</button>
+    <div class="section-title">Browse</div>
+  </div>
+  <div class="browse-grid" id="browseGrid"></div>
+</div>
+
+<!-- DETAIL -->
+<div class="page" id="page-detail">
+  <div class="section-head">
+    <button class="back-btn" onclick="showPage('browse')">← Browse</button>
+    <div class="section-title">Detail</div>
+  </div>
+  <div class="detail-kanji" id="det-kanji"></div>
+  <div class="detail-row">
+    <div class="detail-lbl">Meaning</div>
+    <div class="detail-val big" id="det-meaning"></div>
+  </div>
+  <div class="detail-row">
+    <div class="detail-lbl">Reading (On / Kun)</div>
+    <div class="detail-val" id="det-hira" style="font-size:1.1rem"></div>
+  </div>
+  <div class="detail-row">
+    <div class="detail-lbl">Strokes</div>
+    <div class="detail-val" id="det-strokes"></div>
+  </div>
+  <div class="detail-row">
+    <div class="detail-lbl">Examples</div>
+    <ul class="example-list" id="det-examples"></ul>
+  </div>
+  <div id="det-stats-row"></div>
+</div>
+
+<!-- STATS -->
+<div class="page" id="page-stats">
+  <div class="section-head">
+    <button class="back-btn" onclick="showPage('home')">← Back</button>
+    <div class="section-title">Progress</div>
+  </div>
+  <div class="stats-section">
+    <h3>Overall</h3>
+    <div id="stats-overall"></div>
+  </div>
+  <div class="stats-section">
+    <h3>Quiz accuracy</h3>
+    <div id="stats-quiz"></div>
+  </div>
+  <div class="stats-section">
+    <h3>Needs practice</h3>
+    <ul class="weak-list" id="stats-weak"></ul>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// KANJI DATA
+// ═══════════════════════════════════════════════════════
+const KANJI = [{"kanji":"日","meaning":"sun, day","hiragana":"にち・じつ / ひ・か","examples":["日本 (にほん) Japan","毎日 (まいにち) every day","日曜日 (にちようび) Sunday"],"strokes":"4 strokes","jlpt":"N5"},{"kanji":"一","meaning":"one","hiragana":"いち・いつ / ひと","examples":["一つ (ひとつ) one thing","一日 (いちにち) one day","一番 (いちばん) number one"],"strokes":"1 stroke","jlpt":"N5"},{"kanji":"国","meaning":"country, nation","hiragana":"こく / くに","examples":["国 (くに) country","外国 (がいこく) foreign country","国語 (こくご) national language"],"strokes":"8 strokes","jlpt":"N5"},{"kanji":"人","meaning":"person, people","hiragana":"じん・にん / ひと","examples":["人 (ひと) person","日本人 (にほんじん) Japanese person","人気 (にんき) popularity"],"strokes":"2 strokes","jlpt":"N5"},{"kanji":"年","meaning":"year","hiragana":"ねん / とし","examples":["今年 (ことし) this year","年齢 (ねんれい) age","去年 (きょねん) last year"],"strokes":"6 strokes","jlpt":"N5"},{"kanji":"大","meaning":"big, large","hiragana":"だい・たい / おお","examples":["大きい (おおきい) big","大学 (だいがく) university","大切 (たいせつ) important"],"strokes":"3 strokes","jlpt":"N5"},{"kanji":"十","meaning":"ten","hiragana":"じゅう / とお","examples":["十 (じゅう) ten","十分 (じゅうぶん) enough","二十 (にじゅう) twenty"],"strokes":"2 strokes","jlpt":"N5"},{"kanji":"二","meaning":"two","hiragana":"に / ふた","examples":["二つ (ふたつ) two things","二月 (にがつ) February","二人 (ふたり) two people"],"strokes":"2 strokes","jlpt":"N5"},{"kanji":"本","meaning":"book, origin, main","hiragana":"ほん / もと","examples":["本 (ほん) book","日本 (にほん) Japan","本当 (ほんとう) really/truth"],"strokes":"5 strokes","jlpt":"N5"},{"kanji":"中","meaning":"middle, inside","hiragana":"ちゅう / なか","examples":["中 (なか) inside","中学校 (ちゅうがっこう) middle school","中国 (ちゅうごく) China"],"strokes":"4 strokes","jlpt":"N5"},{"kanji":"長","meaning":"long, chief, leader","hiragana":"ちょう / なが","examples":["長い (ながい) long","社長 (しゃちょう) company president","長所 (ちょうしょ) strong point"],"strokes":"8 strokes","jlpt":"N5"},{"kanji":"出","meaning":"exit, go out","hiragana":"しゅつ / で・だ","examples":["出口 (でぐち) exit","出発 (しゅっぱつ) departure","出来る (できる) can do"],"strokes":"5 strokes","jlpt":"N5"},{"kanji":"三","meaning":"three","hiragana":"さん / み","examples":["三つ (みっつ) three things","三月 (さんがつ) March","三角 (さんかく) triangle"],"strokes":"3 strokes","jlpt":"N5"},{"kanji":"時","meaning":"time, hour","hiragana":"じ / とき","examples":["時間 (じかん) time","時々 (ときどき) sometimes","何時 (なんじ) what time"],"strokes":"10 strokes","jlpt":"N5"},{"kanji":"行","meaning":"go, conduct","hiragana":"こう・ぎょう / い・ゆ","examples":["行く (いく) to go","銀行 (ぎんこう) bank","旅行 (りょこう) travel"],"strokes":"6 strokes","jlpt":"N5"},{"kanji":"見","meaning":"see, look","hiragana":"けん / み","examples":["見る (みる) to see","意見 (いけん) opinion","見学 (けんがく) field trip"],"strokes":"7 strokes","jlpt":"N5"},{"kanji":"月","meaning":"moon, month","hiragana":"げつ・がつ / つき","examples":["月 (つき) moon","毎月 (まいつき) every month","月曜日 (げつようび) Monday"],"strokes":"4 strokes","jlpt":"N5"},{"kanji":"分","meaning":"minute, part, understand","hiragana":"ぶん・ふん / わか","examples":["分かる (わかる) to understand","三分 (さんぷん) 3 minutes","自分 (じぶん) oneself"],"strokes":"4 strokes","jlpt":"N5"},{"kanji":"後","meaning":"after, behind","hiragana":"ご・こう / あと・うし","examples":["後で (あとで) later","午後 (ごご) afternoon","最後 (さいご) last"],"strokes":"9 strokes","jlpt":"N5"},{"kanji":"前","meaning":"before, front","hiragana":"ぜん / まえ","examples":["前 (まえ) before/front","名前 (なまえ) name","午前 (ごぜん) morning"],"strokes":"9 strokes","jlpt":"N5"},{"kanji":"生","meaning":"life, birth, raw","hiragana":"せい・しょう / い・う・なま","examples":["生まれる (うまれる) to be born","学生 (がくせい) student","先生 (せんせい) teacher"],"strokes":"5 strokes","jlpt":"N5"},{"kanji":"目","meaning":"eye","hiragana":"もく / め","examples":["目 (め) eye","目的 (もくてき) purpose","注目 (ちゅうもく) attention"],"strokes":"5 strokes","jlpt":"N5"},{"kanji":"山","meaning":"mountain","hiragana":"さん / やま","examples":["山 (やま) mountain","富士山 (ふじさん) Mt. Fuji","登山 (とざん) mountain climbing"],"strokes":"3 strokes","jlpt":"N5"},{"kanji":"水","meaning":"water","hiragana":"すい / みず","examples":["水 (みず) water","水曜日 (すいようび) Wednesday","水泳 (すいえい) swimming"],"strokes":"4 strokes","jlpt":"N5"},{"kanji":"金","meaning":"gold, money","hiragana":"きん・こん / かね・かな","examples":["お金 (おかね) money","金曜日 (きんようび) Friday","金色 (きんいろ) gold color"],"strokes":"8 strokes","jlpt":"N5"},{"kanji":"火","meaning":"fire","hiragana":"か / ひ","examples":["火 (ひ) fire","火曜日 (かようび) Tuesday","花火 (はなび) fireworks"],"strokes":"4 strokes","jlpt":"N5"},{"kanji":"木","meaning":"tree, wood","hiragana":"もく・ぼく / き・こ","examples":["木 (き) tree","木曜日 (もくようび) Thursday","木材 (もくざい) lumber"],"strokes":"4 strokes","jlpt":"N5"},{"kanji":"土","meaning":"earth, soil","hiragana":"ど・と / つち","examples":["土 (つち) soil","土曜日 (どようび) Saturday","土地 (とち) land"],"strokes":"3 strokes","jlpt":"N5"},{"kanji":"気","meaning":"spirit, energy, mood","hiragana":"き・け","examples":["天気 (てんき) weather","元気 (げんき) healthy/energetic","気持ち (きもち) feeling"],"strokes":"6 strokes","jlpt":"N5"},{"kanji":"上","meaning":"above, up","hiragana":"じょう / うえ・あ・のぼ","examples":["上 (うえ) above","上手 (じょうず) skilled","上がる (あがる) to rise"],"strokes":"3 strokes","jlpt":"N5"},{"kanji":"下","meaning":"below, down","hiragana":"か・げ / した・しも","examples":["下 (した) below","地下 (ちか) underground","下がる (さがる) to fall"],"strokes":"3 strokes","jlpt":"N5"},{"kanji":"子","meaning":"child","hiragana":"し・す / こ","examples":["子供 (こども) child","女子 (じょし) girl","子犬 (こいぬ) puppy"],"strokes":"3 strokes","jlpt":"N5"},{"kanji":"女","meaning":"woman, female","hiragana":"じょ・にょ / おんな","examples":["女性 (じょせい) woman","女の子 (おんなのこ) girl","女優 (じょゆう) actress"],"strokes":"3 strokes","jlpt":"N5"},{"kanji":"男","meaning":"man, male","hiragana":"だん・なん / おとこ","examples":["男性 (だんせい) man","男の子 (おとこのこ) boy","男優 (だんゆう) actor"],"strokes":"7 strokes","jlpt":"N5"},{"kanji":"学","meaning":"study, learning","hiragana":"がく / まな","examples":["学校 (がっこう) school","大学 (だいがく) university","学ぶ (まなぶ) to learn"],"strokes":"8 strokes","jlpt":"N5"},{"kanji":"小","meaning":"small, little","hiragana":"しょう / ちい・こ・お","examples":["小さい (ちいさい) small","小学校 (しょうがっこう) elementary school","小説 (しょうせつ) novel"],"strokes":"3 strokes","jlpt":"N5"},{"kanji":"何","meaning":"what, how many","hiragana":"か / なに・なん","examples":["何 (なに) what","何人 (なんにん) how many people","何故 (なぜ) why"],"strokes":"7 strokes","jlpt":"N5"},{"kanji":"来","meaning":"come","hiragana":"らい / く・き","examples":["来る (くる) to come","来年 (らいねん) next year","将来 (しょうらい) future"],"strokes":"7 strokes","jlpt":"N5"},{"kanji":"言","meaning":"say, word","hiragana":"げん・ごん / い・こと","examples":["言う (いう) to say","言葉 (ことば) word/language","言語 (げんご) language"],"strokes":"7 strokes","jlpt":"N5"},{"kanji":"食","meaning":"eat, food","hiragana":"しょく / た・く","examples":["食べる (たべる) to eat","食事 (しょくじ) meal","食堂 (しょくどう) cafeteria"],"strokes":"9 strokes","jlpt":"N5"},{"kanji":"聞","meaning":"listen, ask","hiragana":"もん / き・きこ","examples":["聞く (きく) to listen/ask","新聞 (しんぶん) newspaper","聴衆 (ちょうしゅう) audience"],"strokes":"14 strokes","jlpt":"N5"},{"kanji":"書","meaning":"write","hiragana":"しょ / か","examples":["書く (かく) to write","書店 (しょてん) bookstore","教科書 (きょうかしょ) textbook"],"strokes":"10 strokes","jlpt":"N5"},{"kanji":"読","meaning":"read","hiragana":"どく・とく / よ","examples":["読む (よむ) to read","読書 (どくしょ) reading books","音読 (おんどく) reading aloud"],"strokes":"14 strokes","jlpt":"N5"},{"kanji":"話","meaning":"speak, story","hiragana":"わ / はな・はなし","examples":["話す (はなす) to speak","電話 (でんわ) telephone","会話 (かいわ) conversation"],"strokes":"13 strokes","jlpt":"N5"},{"kanji":"思","meaning":"think, feel","hiragana":"し / おも","examples":["思う (おもう) to think","思い出 (おもいで) memory","不思議 (ふしぎ) mysterious"],"strokes":"9 strokes","jlpt":"N4"},{"kanji":"知","meaning":"know","hiragana":"ち / し","examples":["知る (しる) to know","知識 (ちしき) knowledge","通知 (つうち) notification"],"strokes":"8 strokes","jlpt":"N4"},{"kanji":"道","meaning":"road, way, path","hiragana":"どう・みち","examples":["道 (みち) road","道路 (どうろ) road","書道 (しょどう) calligraphy"],"strokes":"12 strokes","jlpt":"N4"},{"kanji":"高","meaning":"high, expensive","hiragana":"こう / たか","examples":["高い (たかい) high/expensive","高校 (こうこう) high school","最高 (さいこう) best/highest"],"strokes":"10 strokes","jlpt":"N4"},{"kanji":"校","meaning":"school","hiragana":"こう","examples":["学校 (がっこう) school","高校 (こうこう) high school","校長 (こうちょう) principal"],"strokes":"10 strokes","jlpt":"N5"},{"kanji":"名","meaning":"name, famous","hiragana":"めい・みょう / な","examples":["名前 (なまえ) name","有名 (ゆうめい) famous","名刺 (めいし) business card"],"strokes":"6 strokes","jlpt":"N5"},{"kanji":"入","meaning":"enter, put in","hiragana":"にゅう / はい・い","examples":["入る (はいる) to enter","入口 (いりぐち) entrance","入学 (にゅうがく) school enrollment"],"strokes":"2 strokes","jlpt":"N5"},{"kanji":"電","meaning":"electricity","hiragana":"でん","examples":["電話 (でんわ) telephone","電車 (でんしゃ) train","電気 (でんき) electricity"],"strokes":"13 strokes","jlpt":"N5"},{"kanji":"車","meaning":"car, vehicle","hiragana":"しゃ / くるま","examples":["車 (くるま) car","電車 (でんしゃ) train","自転車 (じてんしゃ) bicycle"],"strokes":"7 strokes","jlpt":"N5"},{"kanji":"語","meaning":"language, word","hiragana":"ご / かた","examples":["日本語 (にほんご) Japanese language","英語 (えいご) English","物語 (ものがたり) story"],"strokes":"14 strokes","jlpt":"N5"},{"kanji":"力","meaning":"power, strength","hiragana":"りょく・りき / ちから","examples":["力 (ちから) power","努力 (どりょく) effort","協力 (きょうりょく) cooperation"],"strokes":"2 strokes","jlpt":"N5"},{"kanji":"手","meaning":"hand","hiragana":"しゅ / て","examples":["手 (て) hand","上手 (じょうず) skilled","手伝う (てつだう) to help"],"strokes":"4 strokes","jlpt":"N5"},{"kanji":"足","meaning":"foot, leg, enough","hiragana":"そく / あし・た","examples":["足 (あし) foot/leg","不足 (ふそく) shortage","満足 (まんぞく) satisfaction"],"strokes":"7 strokes","jlpt":"N5"},{"kanji":"心","meaning":"heart, mind","hiragana":"しん / こころ","examples":["心 (こころ) heart/mind","安心 (あんしん) relief","心配 (しんぱい) worry"],"strokes":"4 strokes","jlpt":"N5"},{"kanji":"友","meaning":"friend","hiragana":"ゆう / とも","examples":["友達 (ともだち) friend","友人 (ゆうじん) friend (formal)","親友 (しんゆう) close friend"],"strokes":"4 strokes","jlpt":"N5"},{"kanji":"白","meaning":"white","hiragana":"はく / しろ・しら","examples":["白い (しろい) white","白紙 (はくし) blank paper","告白 (こくはく) confession"],"strokes":"5 strokes","jlpt":"N5"},{"kanji":"百","meaning":"hundred","hiragana":"ひゃく","examples":["百 (ひゃく) hundred","百円 (ひゃくえん) 100 yen","数百 (すうひゃく) hundreds"],"strokes":"6 strokes","jlpt":"N5"},{"kanji":"千","meaning":"thousand","hiragana":"せん / ち","examples":["千 (せん) thousand","千円 (せんえん) 1000 yen","数千 (すうせん) thousands"],"strokes":"3 strokes","jlpt":"N5"},{"kanji":"万","meaning":"ten thousand","hiragana":"まん・ばん","examples":["一万 (いちまん) ten thousand","万能 (ばんのう) almighty","万歳 (ばんざい) hurray"],"strokes":"3 strokes","jlpt":"N5"},{"kanji":"円","meaning":"circle, yen","hiragana":"えん / まる","examples":["円 (えん) yen","円形 (えんけい) circle shape","一円 (いちえん) one yen"],"strokes":"4 strokes","jlpt":"N5"},{"kanji":"半","meaning":"half","hiragana":"はん / なか","examples":["半分 (はんぶん) half","一時半 (いちじはん) 1:30","半年 (はんとし) half a year"],"strokes":"5 strokes","jlpt":"N5"},{"kanji":"南","meaning":"south","hiragana":"なん / みなみ","examples":["南 (みなみ) south","南米 (なんべい) South America","南極 (なんきょく) Antarctica"],"strokes":"9 strokes","jlpt":"N5"},{"kanji":"北","meaning":"north","hiragana":"ほく / きた","examples":["北 (きた) north","北海道 (ほっかいどう) Hokkaido","北極 (ほっきょく) Arctic"],"strokes":"5 strokes","jlpt":"N5"},{"kanji":"東","meaning":"east","hiragana":"とう / ひがし","examples":["東 (ひがし) east","東京 (とうきょう) Tokyo","東洋 (とうよう) the East/Orient"],"strokes":"8 strokes","jlpt":"N5"},{"kanji":"西","meaning":"west","hiragana":"せい / にし","examples":["西 (にし) west","西洋 (せいよう) the West","関西 (かんさい) Kansai region"],"strokes":"6 strokes","jlpt":"N5"},{"kanji":"毎","meaning":"every, each","hiragana":"まい","examples":["毎日 (まいにち) every day","毎朝 (まいあさ) every morning","毎年 (まいとし) every year"],"strokes":"6 strokes","jlpt":"N5"},{"kanji":"週","meaning":"week","hiragana":"しゅう","examples":["今週 (こんしゅう) this week","毎週 (まいしゅう) every week","来週 (らいしゅう) next week"],"strokes":"11 strokes","jlpt":"N5"},{"kanji":"外","meaning":"outside, foreign","hiragana":"がい・げ / そと・ほか","examples":["外 (そと) outside","外国 (がいこく) foreign country","意外 (いがい) unexpected"],"strokes":"5 strokes","jlpt":"N5"},{"kanji":"内","meaning":"inside, within","hiragana":"ない・だい / うち","examples":["内 (うち) inside","国内 (こくない) domestic","案内 (あんない) guidance"],"strokes":"4 strokes","jlpt":"N4"},{"kanji":"天","meaning":"heaven, sky","hiragana":"てん / あめ・あま","examples":["天気 (てんき) weather","天国 (てんごく) heaven","天才 (てんさい) genius"],"strokes":"4 strokes","jlpt":"N5"},{"kanji":"空","meaning":"sky, empty","hiragana":"くう / そら・あ・から","examples":["空 (そら) sky","空港 (くうこう) airport","空気 (くうき) air"],"strokes":"8 strokes","jlpt":"N5"},{"kanji":"海","meaning":"sea, ocean","hiragana":"かい / うみ","examples":["海 (うみ) sea","海外 (かいがい) overseas","海水 (かいすい) seawater"],"strokes":"9 strokes","jlpt":"N5"},{"kanji":"川","meaning":"river","hiragana":"せん / かわ","examples":["川 (かわ) river","川岸 (かわぎし) riverbank","神奈川 (かながわ) Kanagawa"],"strokes":"3 strokes","jlpt":"N5"},{"kanji":"花","meaning":"flower","hiragana":"か / はな","examples":["花 (はな) flower","花見 (はなみ) cherry blossom viewing","花火 (はなび) fireworks"],"strokes":"7 strokes","jlpt":"N5"},{"kanji":"雨","meaning":"rain","hiragana":"う / あめ・あま","examples":["雨 (あめ) rain","雨天 (うてん) rainy weather","大雨 (おおあめ) heavy rain"],"strokes":"8 strokes","jlpt":"N5"},{"kanji":"雪","meaning":"snow","hiragana":"せつ / ゆき","examples":["雪 (ゆき) snow","大雪 (おおゆき) heavy snow","雪山 (ゆきやま) snowy mountain"],"strokes":"11 strokes","jlpt":"N5"},{"kanji":"風","meaning":"wind, style","hiragana":"ふう / かぜ・かざ","examples":["風 (かぜ) wind","台風 (たいふう) typhoon","風景 (ふうけい) scenery"],"strokes":"9 strokes","jlpt":"N5"},{"kanji":"魚","meaning":"fish","hiragana":"ぎょ / さかな・うお","examples":["魚 (さかな) fish","金魚 (きんぎょ) goldfish","魚介 (ぎょかい) seafood"],"strokes":"11 strokes","jlpt":"N5"},{"kanji":"鳥","meaning":"bird","hiragana":"ちょう / とり","examples":["鳥 (とり) bird","鶏 (にわとり) chicken","小鳥 (ことり) small bird"],"strokes":"11 strokes","jlpt":"N5"},{"kanji":"犬","meaning":"dog","hiragana":"けん / いぬ","examples":["犬 (いぬ) dog","子犬 (こいぬ) puppy","愛犬 (あいけん) beloved dog"],"strokes":"4 strokes","jlpt":"N5"},{"kanji":"猫","meaning":"cat","hiragana":"びょう / ねこ","examples":["猫 (ねこ) cat","野良猫 (のらねこ) stray cat","猫舌 (ねこじた) sensitive to hot food"],"strokes":"11 strokes","jlpt":"N5"},{"kanji":"右","meaning":"right (direction)","hiragana":"う・ゆう / みぎ","examples":["右 (みぎ) right","右手 (みぎて) right hand","左右 (さゆう) left and right"],"strokes":"5 strokes","jlpt":"N5"},{"kanji":"左","meaning":"left (direction)","hiragana":"さ / ひだり","examples":["左 (ひだり) left","左手 (ひだりて) left hand","左折 (させつ) turn left"],"strokes":"5 strokes","jlpt":"N5"},{"kanji":"新","meaning":"new","hiragana":"しん / あたら・あら・にい","examples":["新しい (あたらしい) new","新幹線 (しんかんせん) Shinkansen","新聞 (しんぶん) newspaper"],"strokes":"13 strokes","jlpt":"N5"},{"kanji":"古","meaning":"old","hiragana":"こ / ふる","examples":["古い (ふるい) old","古代 (こだい) ancient times","中古 (ちゅうこ) used/secondhand"],"strokes":"5 strokes","jlpt":"N5"},{"kanji":"父","meaning":"father","hiragana":"ふ / ちち","examples":["父 (ちち) father (my)","お父さん (おとうさん) father","父親 (ちちおや) father"],"strokes":"4 strokes","jlpt":"N5"},{"kanji":"母","meaning":"mother","hiragana":"ぼ / はは","examples":["母 (はは) mother (my)","お母さん (おかあさん) mother","母国 (ぼこく) home country"],"strokes":"5 strokes","jlpt":"N5"},{"kanji":"兄","meaning":"older brother","hiragana":"けい・きょう / あに","examples":["兄 (あに) older brother (my)","お兄さん (おにいさん) older brother","兄弟 (きょうだい) siblings"],"strokes":"5 strokes","jlpt":"N5"},{"kanji":"姉","meaning":"older sister","hiragana":"し / あね","examples":["姉 (あね) older sister (my)","お姉さん (おねえさん) older sister","姉妹 (しまい) sisters"],"strokes":"8 strokes","jlpt":"N5"},{"kanji":"弟","meaning":"younger brother","hiragana":"てい / おとうと","examples":["弟 (おとうと) younger brother","弟子 (でし) apprentice","兄弟 (きょうだい) siblings"],"strokes":"7 strokes","jlpt":"N5"},{"kanji":"妹","meaning":"younger sister","hiragana":"まい / いもうと","examples":["妹 (いもうと) younger sister","姉妹 (しまい) sisters","妹尾 (せのお) a surname"],"strokes":"8 strokes","jlpt":"N5"}];
+
+// ═══════════════════════════════════════════════════════
+// STORAGE
+// ═══════════════════════════════════════════════════════
+const STORAGE_KEY = 'kanji_progress_v2';
+function loadProgress() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch(e) {}
+  return { learned: {}, quiz_stats: { correct: 0, total: 0 }, sessions: 0, last_session: '', answer_log: [], sets: {} };
+}
+function saveProgress(p) {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(p)); } catch(e) {}
+}
+let prog = loadProgress();
+prog.sessions++;
+prog.last_session = new Date().toLocaleString();
+if (!prog.answer_log) prog.answer_log = [];
+if (!prog.sets) prog.sets = {};
+saveProgress(prog);
+
+// ═══════════════════════════════════════════════════════
+// THEME
+// ═══════════════════════════════════════════════════════
+let darkMode = localStorage.getItem('kanji_theme') === 'dark';
+function applyTheme() {
+  document.documentElement.setAttribute('data-theme', darkMode ? 'dark' : 'light');
+  document.getElementById('themeToggle').textContent = darkMode ? '🌙' : '☀️';
+}
+applyTheme();
+document.getElementById('themeToggle').onclick = () => {
+  darkMode = !darkMode;
+  localStorage.setItem('kanji_theme', darkMode ? 'dark' : 'light');
+  applyTheme();
+};
+
+// ═══════════════════════════════════════════════════════
+// PAGE ROUTING
+// ═══════════════════════════════════════════════════════
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  window.scrollTo(0, 0);
+  if (id === 'home') renderHome();
+  if (id === 'flashcard-setup') renderFlashcardSetup();
+  if (id === 'browse') renderBrowse();
+  if (id === 'stats') renderStats();
+  if (id === 'examples') renderExamples();
+  if (id === 'sets') renderSets();
+}
+
+// ═══════════════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════════════
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+function getKanjiPct(ch) {
+  const d = prog.learned[ch];
+  if (!d || d.seen === 0) return null;
+  // Convert rating 1-5 to a 0-100 percentage for display
+  return Math.round(((d.rating || 0) / 5) * 100);
+}
+function getKanjiRating(ch) {
+  const d = prog.learned[ch];
+  if (!d || d.seen === 0) return 0;
+  return d.rating || 0;
+}
+function getWeakKanji() {
+  // Weak = never seen, or rated 1-3
+  return KANJI.filter(k => {
+    const d = prog.learned[k.kanji];
+    return !d || d.seen === 0 || (d.rating || 0) <= 3;
+  });
+}
+function getLogDeck(resultFilter, num) {
+  const lookup = Object.fromEntries(KANJI.map(k => [k.kanji, k]));
+  const seen = new Set();
+  const deck = [];
+  for (let i = prog.answer_log.length - 1; i >= 0; i--) {
+    const e = prog.answer_log[i];
+    if (e.result === resultFilter && !seen.has(e.kanji) && lookup[e.kanji]) {
+      seen.add(e.kanji);
+      deck.push(lookup[e.kanji]);
+      if (deck.length >= num) break;
+    }
+  }
+  return deck;
+}
+function logAnswer(kanji, result) {
+  prog.answer_log.push({ kanji, result, ts: new Date().toISOString() });
+  if (prog.answer_log.length > 500) prog.answer_log = prog.answer_log.slice(-500);
+}
+// SRS interval multipliers per rating — how many sessions before re-testing
+// Rating 1 = every session, 2 = every 2, 3 = every 3, 4 = every 6, 5 = every 12
+const SRS_INTERVAL = { 1: 1, 2: 2, 3: 3, 4: 6, 5: 12 };
+
+function updateLearned(kanji, rating) {
+  // rating: 1-5 (from 5-button rating) OR boolean true/false (from quiz)
+  // Normalise booleans for quiz mode
+  if (rating === true)  rating = 4;
+  if (rating === false) rating = 1;
+  if (!prog.learned[kanji]) prog.learned[kanji] = { correct: 0, seen: 0, rating: 0, nextAt: 0 };
+  const d = prog.learned[kanji];
+  d.seen++;
+  if (rating >= 4) d.correct++;
+  d.rating = rating;
+  d.nextAt = (prog.sessions || 0) + SRS_INTERVAL[rating];
+}
+
+function isDue(kanji) {
+  // A kanji is due if never rated OR nextAt <= current session count
+  const d = prog.learned[kanji];
+  if (!d || d.seen === 0) return true;
+  return (prog.sessions || 0) >= (d.nextAt || 0);
+}
+
+function getWeightedDueDeck(num) {
+  // Returns cards weighted by rating: lower rating = more copies = higher chance
+  // Also include overdue cards first
+  const due    = KANJI.filter(k => isDue(k.kanji));
+  const notDue = KANJI.filter(k => !isDue(k.kanji));
+  // Shuffle due cards and return up to num
+  const pool = shuffle(due);
+  // If we still need more, fill with lowest-rated from notDue
+  if (pool.length < num) {
+    const extra = notDue.sort((a, b) => {
+      const ra = (prog.learned[a.kanji] || {}).rating || 0;
+      const rb = (prog.learned[b.kanji] || {}).rating || 0;
+      return ra - rb;
+    });
+    pool.push(...extra);
+  }
+  return pool.slice(0, num);
+}
+
+// ═══════════════════════════════════════════════════════
+// HOME
+// ═══════════════════════════════════════════════════════
+function renderHome() {
+  const total = KANJI.length;
+  const seen = Object.keys(prog.learned).filter(k => prog.learned[k].seen > 0).length;
+  const mastered = Object.keys(prog.learned).filter(k => {
+    const d = prog.learned[k];
+    return d.seen > 0 && (d.rating || 0) >= 4;
+  }).length;
+  const pct = Math.round(seen / total * 100);
+
+  document.getElementById('home-stats').innerHTML = `
+    <div class="stat-card"><div class="stat-num">${seen}</div><div class="stat-label">Studied</div></div>
+    <div class="stat-card"><div class="stat-num">${mastered}</div><div class="stat-label">Mastered</div></div>
+    <div class="stat-card"><div class="stat-num">${prog.sessions}</div><div class="stat-label">Sessions</div></div>`;
+  document.getElementById('home-prog').style.width = pct + '%';
+}
+
+// ═══════════════════════════════════════════════════════
+// FLASHCARD SETUP
+// ═══════════════════════════════════════════════════════
+let selectedDeck = 'random';
+let lastDeck = [];
+
+function renderFlashcardSetup() {
+  const weak = getWeakKanji();
+  document.getElementById('weak-sub').textContent = `${weak.length} rated 1–3`;
+  const dueCount = KANJI.filter(k => isDue(k.kanji)).length;
+  document.getElementById('srs-sub').textContent = `${dueCount} due now`;
+
+  const logCorrect = new Set(prog.answer_log.filter(e => e.result === 'correct').map(e => e.kanji));
+  const logWrong   = new Set(prog.answer_log.filter(e => e.result === 'wrong').map(e => e.kanji));
+  document.getElementById('correct-log-sub').textContent = logCorrect.size
+    ? `${logCorrect.size} unique available` : 'No history yet';
+  document.getElementById('wrong-log-sub').textContent = logWrong.size
+    ? `${logWrong.size} unique available` : 'No history yet';
+
+  const repeatOpt = document.getElementById('opt-repeat');
+  if (lastDeck.length) {
+    document.getElementById('repeat-sub').textContent = `${lastDeck.length} cards from last session`;
+    repeatOpt.classList.remove('disabled');
+  } else {
+    document.getElementById('repeat-sub').textContent = 'No previous set yet';
+    repeatOpt.classList.add('disabled');
+    if (selectedDeck === 'repeat') selectDeck(document.querySelector('[data-deck="random"]'), 'random');
+  }
+
+  // Disable log options if empty
+  document.querySelector('[data-deck="correct_log"]').classList.toggle('disabled', logCorrect.size === 0);
+  document.querySelector('[data-deck="wrong_log"]').classList.toggle('disabled', logWrong.size === 0);
+}
+
+function selectDeck(el, deck) {
+  document.querySelectorAll('.deck-opt').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedDeck = deck;
+}
+function selectQuizType(el, type) {
+  document.querySelectorAll('[data-quiz]').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedQuizType = type;
+}
+
+function buildDeck(type, num) {
+  if (type === 'random')      return shuffle(KANJI).slice(0, num);
+  if (type === 'repeat')      return shuffle([...lastDeck]).slice(0, num);
+  if (type === 'weak')        return shuffle(getWeakKanji()).slice(0, num);
+  if (type === 'srs')         return getWeightedDueDeck(num);
+  if (type === 'correct_log') return getLogDeck('correct', num);
+  if (type === 'wrong_log')   return getLogDeck('wrong', num);
+  return shuffle(KANJI).slice(0, num);
+}
+
+// ═══════════════════════════════════════════════════════
+// FLASHCARD SESSION
+// ═══════════════════════════════════════════════════════
+let fcDeck = [], fcIndex = 0, fcMissed = [], fcRevealed = false;
+
+function startFlashcards() {
+  const num = Math.max(1, parseInt(document.getElementById('card-count').value) || 10);
+  const deck = buildDeck(selectedDeck, num);
+  if (!deck.length) { alert('No kanji available for this deck type.'); return; }
+  fcDeck = deck;
+  lastDeck = deck;
+  fcIndex = 0;
+  fcMissed = [];
+  showPage('flashcard');
+  loadFCCard();
+}
+
+function populateCardBack(k) {
+  document.getElementById('cb-kanji-mini').textContent = k.kanji;
+  document.getElementById('cb-meaning').textContent = k.meaning;
+  document.getElementById('cb-hiragana').textContent = k.hiragana;
+  document.getElementById('cb-tag').textContent = k.jlpt + '  ·  ' + k.strokes;
+  // Examples with save-to-set buttons
+  const ul = document.getElementById('cb-examples');
+  ul.innerHTML = k.examples.map((ex, i) => {
+    const m = ex.match(/^(.+?)\s*\((.+?)\)\s*(.+)$/);
+    const exId = m ? `${k.kanji}__${m[1].trim()}` : `${k.kanji}__${i}`;
+    return `<li style="display:flex;align-items:center;gap:6px">
+      <span style="flex:1">${ex}</span>
+      <button onclick="openSaveModal(event,'${exId}')" style="background:none;border:none;font-size:1rem;cursor:pointer;flex-shrink:0;padding:2px 4px;color:var(--text2)" title="Save to set">🗂️</button>
+    </li>`;
+  }).join('');
+}
+
+function loadFCCard() {
+  const k = fcDeck[fcIndex];
+  fcRevealed = false;
+  document.getElementById('fc-counter').textContent = `Card ${fcIndex + 1} / ${fcDeck.length}`;
+  // Show front (kanji), hide back
+  document.getElementById('cardWrap').classList.remove('revealed');
+  document.getElementById('fc-kanji').textContent = k.kanji;
+  document.getElementById('reveal-row').classList.remove('hidden');
+  document.getElementById('answer-btns').classList.add('hidden');
+  // Pre-populate back while it's hidden — no flash possible
+  populateCardBack(k);
+}
+
+function revealCard() {
+  if (fcRevealed) return;
+  fcRevealed = true;
+  document.getElementById('cardWrap').classList.add('revealed');
+  document.getElementById('reveal-row').classList.add('hidden');
+  document.getElementById('answer-btns').classList.remove('hidden');
+}
+
+function answerCard(rating) {
+  const k = fcDeck[fcIndex];
+  updateLearned(k.kanji, rating);
+  logAnswer(k.kanji, rating >= 4 ? 'correct' : 'wrong');
+  if (rating <= 3) fcMissed.push(k);
+  saveProgress(prog);
+  fcIndex++;
+  if (fcIndex < fcDeck.length) {
+    loadFCCard();
+  } else {
+    showFCSummary();
+  }
+}
+
+function endFlashcardSession() {
+  showPage('home');
+}
+
+function showFCSummary() {
+  const known = fcDeck.length - fcMissed.length; // rated 4-5
+  document.getElementById('sum-known').textContent = known;
+  document.getElementById('sum-missed').textContent = fcMissed.length; // rated 1-3
+  document.getElementById('sum-total').textContent = fcDeck.length;
+
+  // Build action buttons
+  const usedKanji = new Set(fcDeck.map(k => k.kanji));
+  const freshUnknown = KANJI.filter(k => !usedKanji.has(k.kanji) && getWeakKanji().find(w => w.kanji === k.kanji));
+  const topupAvail = Math.min(known, freshUnknown.length);
+
+  let html = `<button class="action-btn primary" onclick="repeatFullDeck()">
+    <span class="a-icon">🔁</span>
+    <div><span class="a-label">Repeat this set</span><span class="a-sub">${fcDeck.length} cards reshuffled</span></div>
+  </button>`;
+
+  if (fcMissed.length > 0) {
+    const newCount = Math.min(known, freshUnknown.length);
+    const totalCards = fcMissed.length + newCount;
+    html += `<button class="action-btn" onclick="retryMissedPlusFresh()">
+      <span class="a-icon">⚠️</span>
+      <div><span class="a-label">Retry missed + ${newCount} new unknown</span>
+      <span class="a-sub">${fcMissed.length} missed · replace ${known} correct → ${newCount} new · ${totalCards} cards total</span></div>
+    </button>`;
+  } else {
+    html += `<button class="action-btn" style="opacity:0.45;pointer-events:none">
+      <span class="a-icon">⚠️</span>
+      <div><span class="a-label">Retry missed</span><span class="a-sub">You got them all! 🎉</span></div>
+    </button>`;
+  }
+
+  html += `<button class="action-btn" onclick="showPage('flashcard-setup')">
+    <span class="a-icon">🎲</span>
+    <div><span class="a-label">New set</span><span class="a-sub">Choose a different deck</span></div>
+  </button>
+  <button class="action-btn" onclick="showPage('home')">
+    <span class="a-icon">🏠</span>
+    <div><span class="a-label">Home</span></div>
+  </button>`;
+
+  document.getElementById('summary-actions').innerHTML = html;
+  showPage('fc-summary');
+}
+
+function repeatFullDeck() {
+  fcDeck = shuffle([...fcDeck]);
+  fcIndex = 0; fcMissed = [];
+  showPage('flashcard');
+  loadFCCard();
+}
+
+function retryMissedPlusFresh() {
+  const usedKanji = new Set(fcDeck.map(k => k.kanji));
+  const freshUnknown = shuffle(KANJI.filter(k =>
+    !usedKanji.has(k.kanji) &&
+    getWeakKanji().find(w => w.kanji === k.kanji)
+  ));
+  const replaceN = fcDeck.length - fcMissed.length; // how many were correct
+  const topup = freshUnknown.slice(0, replaceN);
+  fcDeck = shuffle([...fcMissed, ...topup]);
+  lastDeck = fcDeck;
+  fcIndex = 0; fcMissed = [];
+  showPage('flashcard');
+  loadFCCard();
+}
+
+// ═══════════════════════════════════════════════════════
+// QUIZ
+// ═══════════════════════════════════════════════════════
+let selectedQuizType = 'k2m';
+let quizDeck = [], quizIndex = 0, quizCorrect = 0, quizAnswered = false;
+
+function startQuiz() {
+  const num = Math.max(1, parseInt(document.getElementById('quiz-count').value) || 10);
+  quizDeck = shuffle(KANJI).slice(0, num);
+  quizIndex = 0; quizCorrect = 0;
+  showPage('quiz');
+  loadQuizQ();
+}
+
+function loadQuizQ() {
+  const q = quizDeck[quizIndex];
+  quizAnswered = false;
+  document.getElementById('quiz-progress-label').textContent = `Q ${quizIndex + 1} / ${quizDeck.length}`;
+  document.getElementById('quizNext').classList.remove('show');
+
+  let qType = selectedQuizType;
+  if (qType === 'mixed') qType = Math.random() < 0.5 ? 'k2m' : 'm2k';
+
+  // Build 4 options
+  const others = shuffle(KANJI.filter(k => k.kanji !== q.kanji)).slice(0, 3);
+  const opts = shuffle([q, ...others]);
+
+  if (qType === 'k2m') {
+    document.getElementById('quiz-kanji').textContent = q.kanji;
+    document.getElementById('quiz-kanji').classList.remove('hidden');
+    document.getElementById('quiz-meaning').classList.add('hidden');
+    document.getElementById('quizOpts').innerHTML = opts.map(o =>
+      `<button class="quiz-opt" onclick="answerQuiz(this,'${o.kanji}','${q.kanji}')">${o.meaning}</button>`
+    ).join('');
+  } else {
+    document.getElementById('quiz-meaning').textContent = q.meaning;
+    document.getElementById('quiz-meaning').classList.remove('hidden');
+    document.getElementById('quiz-kanji').classList.add('hidden');
+    document.getElementById('quizOpts').innerHTML = opts.map(o =>
+      `<button class="quiz-opt kanji-opt" onclick="answerQuiz(this,'${o.kanji}','${q.kanji}')">${o.kanji}</button>`
+    ).join('');
+  }
+}
+
+function answerQuiz(btn, chosen, correct) {
+  if (quizAnswered) return;
+  quizAnswered = true;
+  const isCorrect = chosen === correct;
+  const q = quizDeck[quizIndex];
+
+  btn.classList.add(isCorrect ? 'correct' : 'wrong');
+  if (!isCorrect) {
+    document.querySelectorAll('.quiz-opt').forEach(b => {
+      if (b.textContent === q.meaning || b.textContent === q.kanji) b.classList.add('correct');
+    });
+  }
+
+  if (isCorrect) quizCorrect++;
+  prog.quiz_stats.total++;
+  if (isCorrect) prog.quiz_stats.correct++;
+  updateLearned(q.kanji, isCorrect);
+  logAnswer(q.kanji, isCorrect ? 'correct' : 'wrong');
+  saveProgress(prog);
+
+  document.getElementById('quizNext').classList.add('show');
+  document.getElementById('quizNext').textContent =
+    quizIndex + 1 < quizDeck.length ? 'Next →' : `Finish — ${quizCorrect}/${quizDeck.length} correct`;
+}
+
+function nextQuestion() {
+  quizIndex++;
+  if (quizIndex < quizDeck.length) { loadQuizQ(); }
+  else { showPage('home'); }
+}
+
+// ═══════════════════════════════════════════════════════
+// BROWSE
+// ═══════════════════════════════════════════════════════
+function renderBrowse() {
+  document.getElementById('browseGrid').innerHTML = KANJI.map((k, i) => {
+    const rating = getKanjiRating(k.kanji);
+    const ratingLabels = {0:'New',1:'①',2:'②',3:'③',4:'④',5:'⑤'};
+    const ratingCls = rating === 0 ? 'new' : rating <= 3 ? (rating === 1 ? 'bad' : 'mid') : 'good';
+    const pctHtml = `<span class="browse-pct ${ratingCls}">${ratingLabels[rating]}</span>`;
+    return `<div class="browse-item" onclick="showDetail(${i})">
+      <div class="browse-kanji">${k.kanji}</div>
+      <div class="browse-info">
+        <div class="browse-meaning">${k.meaning}</div>
+        <div class="browse-hira">${k.hiragana}</div>
+      </div>
+      ${pctHtml}
+    </div>`;
+  }).join('');
+}
+
+function showDetail(idx) {
+  const k = KANJI[idx];
+  document.getElementById('det-kanji').textContent = k.kanji;
+  document.getElementById('det-meaning').textContent = k.meaning;
+  document.getElementById('det-hira').textContent = k.hiragana;
+  document.getElementById('det-strokes').textContent = k.strokes;
+  document.getElementById('det-examples').innerHTML = k.examples.map(e => `<li>${e}</li>`).join('');
+  const pct = getKanjiPct(k.kanji);
+  const d = prog.learned[k.kanji];
+  const rn = ['','Not at all','Seen it before','Almost remember','Know it','Expert! ⭐'];
+  document.getElementById('det-stats-row').innerHTML = d && d.seen > 0
+    ? `<div class="detail-row"><div class="detail-lbl">Your rating</div>
+       <div class="detail-val">${rn[d.rating || 0] || 'Unrated'} &nbsp;·&nbsp; ${d.seen} times seen</div></div>
+       <span class="tag">${k.jlpt}</span>`
+    : `<span class="tag">${k.jlpt}</span> <span class="tag">Not studied yet</span>`;
+  showPage('detail');
+}
+
+// ═══════════════════════════════════════════════════════
+// STATS
+// ═══════════════════════════════════════════════════════
+function renderStats() {
+  const total = KANJI.length;
+  const seen = Object.keys(prog.learned).filter(k => prog.learned[k].seen > 0).length;
+  const mastered = Object.keys(prog.learned).filter(k => {
+    const d = prog.learned[k];
+    return d.seen > 0 && (d.rating || 0) >= 4;
+  }).length;
+  const pct = Math.round(seen / total * 100);
+
+  document.getElementById('stats-overall').innerHTML = `
+    <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+      <span style="font-size:.8rem;color:var(--text2)">Studied ${seen} / ${total}</span>
+      <span style="font-size:.8rem;color:var(--text2)">${pct}%</span>
+    </div>
+    <div class="progress-big"><div class="progress-big-fill" style="width:${pct}%"></div></div>
+    <div style="font-size:.8rem;color:var(--text2);margin-top:6px">Mastered (≥80%): <strong style="color:var(--good)">${mastered}</strong> &nbsp;·&nbsp; Sessions: <strong>${prog.sessions}</strong></div>`;
+
+  const qt = prog.quiz_stats.total, qc = prog.quiz_stats.correct;
+  const qacc = qt > 0 ? Math.round(qc / qt * 100) : 0;
+  document.getElementById('stats-quiz').innerHTML = qt > 0
+    ? `<div style="font-size:.85rem;color:var(--text)">
+         ${qc} / ${qt} correct &nbsp;·&nbsp; <strong style="color:var(--accent)">${qacc}%</strong> accuracy
+         <div class="progress-big" style="margin-top:8px"><div class="progress-big-fill" style="width:${qacc}%"></div></div>
+       </div>`
+    : `<div style="font-size:.8rem;color:var(--text2)">No quiz data yet. Take a quiz!</div>`;
+
+  const ratingNames = ['','Not at all','Seen it','Almost','Know it','Expert'];
+  const ratingColors = ['','var(--bad)','#E07020','#A07800','var(--good)','#1565C0'];
+  const weak = KANJI.filter(k => {
+    const d = prog.learned[k.kanji];
+    return d && d.seen > 0 && (d.rating || 0) <= 3;
+  }).sort((a, b) => {
+    const ra = prog.learned[a.kanji].rating || 0;
+    const rb = prog.learned[b.kanji].rating || 0;
+    return ra - rb;
+  }).slice(0, 10);
+
+  document.getElementById('stats-weak').innerHTML = weak.length
+    ? weak.map(k => {
+        const d = prog.learned[k.kanji];
+        const r = d.rating || 0;
+        const due = isDue(k.kanji) ? ' 🔔' : '';
+        return `<li><span class="weak-kanji">${k.kanji}</span> <span style="flex:1">${k.meaning}</span> <span style="color:${ratingColors[r]};font-size:.78rem">${r > 0 ? ratingNames[r] : 'Unseen'}${due}</span></li>`;
+      }).join('')
+    : `<li style="color:var(--text2);font-size:.85rem">No weak kanji — great work! 🎉</li>`;
+}
+
+
+// ═══════════════════════════════════════════════════════
+// EXAMPLE DATA — parse all examples from KANJI into flat list
+// ═══════════════════════════════════════════════════════
+const ALL_EXAMPLES = [];
+KANJI.forEach(k => {
+  k.examples.forEach(ex => {
+    // Format: "word (reading) meaning"
+    const m = ex.match(/^(.+?)\s*\((.+?)\)\s*(.+)$/);
+    if (m) {
+      ALL_EXAMPLES.push({
+        id: `${k.kanji}__${m[1]}`,
+        word: m[1].trim(),
+        reading: m[2].trim(),
+        meaning: m[3].trim(),
+        fromKanji: k.kanji,
+        fromMeaning: k.meaning,
+        raw: ex
+      });
+    } else {
+      ALL_EXAMPLES.push({
+        id: `${k.kanji}__${ex}`,
+        word: ex, reading: '', meaning: '',
+        fromKanji: k.kanji, fromMeaning: k.meaning, raw: ex
+      });
+    }
+  });
+});
+
+// ═══════════════════════════════════════════════════════
+// EXAMPLES BROWSER
+// ═══════════════════════════════════════════════════════
+let exFilter = 'all';
+let pendingSaveEx = null;
+
+function renderExamples() {
+  // Build JLPT filter buttons from unique kanji
+  const filterRow = document.getElementById('ex-filter-row');
+  filterRow.innerHTML = `
+    <button class="ex-filter-btn active" onclick="filterExamples('all',this)">All</button>
+  `;
+  renderExList();
+}
+
+function filterExamples(f, btn) {
+  exFilter = f;
+  document.querySelectorAll('.ex-filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderExList();
+}
+
+function renderExList() {
+  let list = ALL_EXAMPLES;
+
+  document.getElementById('ex-list').innerHTML = list.length === 0
+    ? `<div style="text-align:center;color:var(--text2);padding:40px;font-size:.9rem">No examples here yet.</div>`
+    : list.map(e => `
+    <div class="ex-item">
+      <div class="ex-kanji-tag">${e.fromKanji}</div>
+      <div class="ex-item-body">
+        <div class="ex-word">${e.word}</div>
+        ${e.reading ? `<div class="ex-reading">${e.reading}</div>` : ''}
+        ${e.meaning ? `<div class="ex-eng">${e.meaning}</div>` : ''}
+      </div>
+      <button class="fav-btn" onclick="openSaveModal(event,'${e.id}')" title="Save to set" style="font-size:1.2rem">
+        🗂️
+      </button>
+    </div>`).join('');
+}
+
+
+
+// ═══════════════════════════════════════════════════════
+// SAVE-TO-SET MODAL
+// ═══════════════════════════════════════════════════════
+function openSaveModal(evt, exId) {
+  evt.stopPropagation();
+  pendingSaveEx = exId;
+  renderModalSets();
+  document.getElementById('saveModal').classList.add('open');
+}
+
+function closeSaveModal(evt) {
+  if (evt.target === document.getElementById('saveModal')) {
+    document.getElementById('saveModal').classList.remove('open');
+    pendingSaveEx = null;
+  }
+}
+
+function renderModalSets() {
+  const sets = prog.sets;
+  const ex = pendingSaveEx;
+  // Show the word being saved at the top
+  const exObj = ALL_EXAMPLES.find(e => e.id === ex);
+  const wordLabel = exObj ? `<div style="font-size:.8rem;color:var(--text2);margin-bottom:12px;font-family:'Noto Sans JP',sans-serif">
+    Saving: <strong style="color:var(--text)">${exObj.word}</strong> — ${exObj.meaning}</div>` : '';
+  
+  const names = Object.keys(sets);
+  let setsHtml = names.length === 0
+    ? `<div style="font-size:.82rem;color:var(--text2);padding:12px 0 8px">No sets yet — create one below.</div>`
+    : names.map(name => {
+        const inSet = (sets[name] || []).includes(ex);
+        return `<div class="modal-set-opt" onclick="saveExToSet('${name}')">
+          <span class="m-icon">${inSet ? '✓' : '🗂️'}</span>
+          <span class="m-name">${name}</span>
+          <span style="margin-left:auto;font-size:.72rem;color:var(--text2);margin-right:8px">${(sets[name]||[]).length}</span>
+          ${inSet ? '<span class="m-tick" style="color:var(--good)">Saved</span>' : ''}
+        </div>`;
+      }).join('');
+
+  document.getElementById('modal-sets-list').innerHTML = wordLabel + setsHtml;
+}
+
+
+
+function saveExToSet(name) {
+  if (!pendingSaveEx) return;
+  if (!prog.sets[name]) prog.sets[name] = [];
+  const idx = prog.sets[name].indexOf(pendingSaveEx);
+  if (idx === -1) prog.sets[name].push(pendingSaveEx);
+  else prog.sets[name].splice(idx, 1);
+  saveProgress(prog);
+  renderModalSets();
+}
+
+function modalCreateSet() {
+  const inp = document.getElementById('modal-new-set-input');
+  const name = inp.value.trim();
+  if (!name) return;
+  if (!prog.sets[name]) prog.sets[name] = [];
+  // Auto-add the current example to the newly created set
+  if (pendingSaveEx && !prog.sets[name].includes(pendingSaveEx)) {
+    prog.sets[name].push(pendingSaveEx);
+  }
+  saveProgress(prog);
+  inp.value = '';
+  renderModalSets();
+}
+
+// ═══════════════════════════════════════════════════════
+// SETS MANAGER
+// ═══════════════════════════════════════════════════════
+function renderSets() {
+  const sets = prog.sets;
+  let html = ``;
+
+  Object.keys(sets).forEach(name => {
+    const count = (sets[name] || []).length;
+    html += `<div class="set-card" onclick="openSetDetail('${name}')">
+      <span class="set-icon">🗂️</span>
+      <div style="flex:1">
+        <div class="set-name">${name}</div>
+        <div class="set-count">${count} example${count !== 1 ? 's' : ''}</div>
+      </div>
+      <button class="set-del" onclick="deleteSet(event,'${name}')">🗑️</button>
+    </div>`;
+  });
+
+  if (!Object.keys(sets).length && !favCount) {
+    html += `<div style="text-align:center;color:var(--text2);padding:30px;font-size:.85rem">
+      No sets yet.<br>Browse examples and tap 🗂️ to save words.
+    </div>`;
+  }
+
+  document.getElementById('sets-list').innerHTML = html;
+}
+
+function createSet() {
+  const inp = document.getElementById('new-set-input');
+  const name = inp.value.trim();
+  if (!name) return;
+  if (!prog.sets[name]) prog.sets[name] = [];
+  saveProgress(prog);
+  inp.value = '';
+  renderSets();
+}
+
+function deleteSet(evt, name) {
+  evt.stopPropagation();
+  if (confirm(`Delete set "${name}"?`)) {
+    delete prog.sets[name];
+    saveProgress(prog);
+    renderSets();
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// SET DETAIL + STUDY MODES
+// ═══════════════════════════════════════════════════════
+let currentSetName = '';
+let currentSetStudyMode = 'browse';
+let exFlashDeck = [], exFlashIdx = 0, exFlashMissed = [], exFlashRevealed = false;
+let exQuizDeck = [], exQuizIdx = 0, exQuizCorrect = 0, exQuizAnswered = false;
+
+function getSetExamples(setName) {
+  const ids = prog.sets[setName] || [];
+  const lookup = Object.fromEntries(ALL_EXAMPLES.map(e => [e.id, e]));
+  return ids.map(id => lookup[id]).filter(Boolean);
+}
+
+function openSetDetail(name) {
+  currentSetName = name;
+  currentSetStudyMode = 'browse';
+  document.getElementById('set-detail-title').textContent = name;
+  ['browse','flash','quiz','write'].forEach(m => {
+    document.getElementById('smode-'+m).classList.toggle('active', m === 'browse');
+  });
+  renderSetDetailBody();
+  showPage('set-detail');
+}
+
+function setStudyMode(mode) {
+  currentSetStudyMode = mode;
+  ['browse','flash','quiz','write'].forEach(m => {
+    document.getElementById('smode-'+m).classList.toggle('active', m === mode);
+  });
+  renderSetDetailBody();
+}
+
+function renderSetDetailBody() {
+  const items = getSetExamples(currentSetName);
+  const body = document.getElementById('set-detail-body');
+
+  if (currentSetStudyMode === 'browse') {
+    if (!items.length) {
+      body.innerHTML = `<div style="text-align:center;color:var(--text2);padding:30px;font-size:.85rem">No examples in this set yet.</div>`;
+      return;
+    }
+    body.innerHTML = items.map(e => `
+      <div class="set-ex-item">
+        <div class="ex-kanji-tag">${e.fromKanji}</div>
+        <div class="ex-item-body">
+          <div class="ex-word">${e.word}</div>
+          ${e.reading ? `<div class="ex-reading">${e.reading}</div>` : ''}
+          ${e.meaning ? `<div class="ex-eng">${e.meaning}</div>` : ''}
+        </div>
+        <button class="set-ex-remove" onclick="removeFromSet('${e.id}')">✕</button>
+      </div>`).join('');
+
+  } else if (currentSetStudyMode === 'flash') {
+    body.innerHTML = items.length
+      ? `<button class="full-btn" onclick="startExFlash()">Start Flashcards (${items.length} cards) →</button>`
+      : `<div style="text-align:center;color:var(--text2);padding:30px;font-size:.85rem">Add some examples first.</div>`;
+
+  } else if (currentSetStudyMode === 'quiz') {
+    body.innerHTML = items.length >= 4
+      ? `<button class="full-btn" onclick="startExQuiz()">Start Quiz (${items.length} questions) →</button>`
+      : `<div style="text-align:center;color:var(--text2);padding:30px;font-size:.85rem">${items.length < 4 ? 'Need at least 4 examples for a quiz.' : 'Add some examples first.'}</div>`;
+  } else if (currentSetStudyMode === 'write') {
+    body.innerHTML = items.length
+      ? `<button class="full-btn" onclick="startExWrite()">Start Writing Practice (${items.length} words) →</button>
+         <p style="font-size:.75rem;color:var(--text2);margin-top:12px;text-align:center">
+           See the word + meaning, type the hiragana reading from memory
+         </p>`
+      : `<div style="text-align:center;color:var(--text2);padding:30px;font-size:.85rem">Add some examples first.</div>`;
+  }
+}
+
+function removeFromSet(id) {
+  prog.sets[currentSetName] = (prog.sets[currentSetName] || []).filter(i => i !== id);
+  saveProgress(prog);
+  renderSetDetailBody();
+}
+
+// ═══════════════════════════════════════════════════════
+// EXAMPLE FLASHCARDS
+// ═══════════════════════════════════════════════════════
+function startExFlash() {
+  const items = shuffle(getSetExamples(currentSetName));
+  if (!items.length) return;
+  exFlashDeck = items;
+  exFlashIdx = 0; exFlashMissed = [];
+  document.getElementById('ex-flash-title').textContent = currentSetName;
+  showPage('ex-flash');
+  loadExFlashCard();
+}
+
+function loadExFlashCard() {
+  const e = exFlashDeck[exFlashIdx];
+  exFlashRevealed = false;
+  document.getElementById('ex-flash-counter').textContent = `${exFlashIdx+1} / ${exFlashDeck.length}`;
+  document.getElementById('ex-card-word').textContent = e.word;
+  document.getElementById('ecb-word').textContent = e.word;
+  document.getElementById('ecb-reading').textContent = e.reading;
+  document.getElementById('ecb-meaning').textContent = e.meaning;
+  document.getElementById('ecb-from').textContent = `From kanji: ${e.fromKanji} (${e.fromMeaning})`;
+  document.getElementById('ex-card-face').style.display = 'flex';
+  document.getElementById('ex-card-back').classList.add('hidden');
+  document.getElementById('ex-answer-btns').style.display = 'none';
+  document.getElementById('ex-reveal-row').style.display = 'block';
+}
+
+function revealExCard() {
+  if (exFlashRevealed) return;
+  exFlashRevealed = true;
+  document.getElementById('ex-card-face').style.display = 'none';
+  document.getElementById('ex-card-back').classList.remove('hidden');
+  document.getElementById('ex-answer-btns').style.display = 'grid';
+  document.getElementById('ex-reveal-row').style.display = 'none';
+}
+
+function answerExCard(correct) {
+  if (!correct) exFlashMissed.push(exFlashDeck[exFlashIdx]);
+  exFlashIdx++;
+  if (exFlashIdx < exFlashDeck.length) loadExFlashCard();
+  else {
+    const known = exFlashDeck.length - exFlashMissed.length;
+    alert(`Session done! ✓ ${known} / ${exFlashDeck.length}`);
+    showPage('set-detail');
+  }
+}
+
+function endExFlash() {
+  showPage('set-detail');
+}
+
+// ═══════════════════════════════════════════════════════
+// EXAMPLE QUIZ
+// ═══════════════════════════════════════════════════════
+function startExQuiz() {
+  const items = getSetExamples(currentSetName);
+  if (items.length < 4) return;
+  exQuizDeck = shuffle(items);
+  exQuizIdx = 0; exQuizCorrect = 0;
+  document.getElementById('ex-flash-title').textContent = currentSetName + ' Quiz';
+
+  // Re-use quiz page layout for simplicity — build inline
+  const body = document.getElementById('set-detail-body');
+
+  function renderExQ() {
+    const q = exQuizDeck[exQuizIdx];
+    const others = shuffle(ALL_EXAMPLES.filter(e => e.id !== q.id && e.meaning !== q.meaning)).slice(0, 3);
+    const opts = shuffle([q, ...others]);
+    body.innerHTML = `
+      <div class="quiz-q" style="min-height:120px">
+        <div class="kanji-lg" style="font-size:clamp(32px,10vw,56px)">${q.word}</div>
+        <div style="font-family:'Noto Sans JP',sans-serif;font-size:.85rem;color:rgba(245,240,232,0.6);margin-top:6px">${q.reading}</div>
+      </div>
+      <div style="font-size:.72rem;color:var(--text2);margin-bottom:10px;text-align:center">Q ${exQuizIdx+1} / ${exQuizDeck.length}  ·  ✓ ${exQuizCorrect}</div>
+      <div class="quiz-opts">
+        ${opts.map(o => `<button class="quiz-opt" data-id="${o.id}" onclick="answerExQuiz(this,'${o.id}','${q.id}')">${o.meaning || o.word}</button>`).join('')}
+      </div>
+      <button class="quiz-next" id="exQuizNext" onclick="nextExQ()" style="display:none">Next →</button>`;
+
+    // store renderExQ on window for reuse
+    window._renderExQ = renderExQ;
+  }
+
+  window._renderExQ = renderExQ;
+  renderExQ();
+}
+
+function answerExQuiz(btn, chosen, correct) {
+  if (btn.disabled) return;
+  document.querySelectorAll('.quiz-opt').forEach(b => b.disabled = true);
+  const isCorrect = chosen === correct;
+  btn.classList.add(isCorrect ? 'correct' : 'wrong');
+  if (!isCorrect) {
+    document.querySelectorAll('.quiz-opt').forEach(b => {
+      if (b.dataset.id === correct) b.classList.add('correct');
+    });
+  }
+  if (isCorrect) exQuizCorrect++;
+  const next = document.getElementById('exQuizNext');
+  if (next) {
+    next.style.display = 'block';
+    exQuizIdx++;
+    next.textContent = exQuizIdx < exQuizDeck.length ? 'Next →' : `Done — ${exQuizCorrect}/${exQuizDeck.length} correct`;
+  }
+}
+
+function nextExQ() {
+  if (exQuizIdx < exQuizDeck.length) {
+    window._renderExQ && window._renderExQ();
+  } else {
+    renderSetDetailBody(); // back to set detail
+  }
+}
+
+
+// ═══════════════════════════════════════════════════════
+// WRITING PRACTICE
+// ═══════════════════════════════════════════════════════
+let writeDeck = [], writeIdx = 0, writeCorrect = 0, writeWrong = 0, writeChecked = false;
+
+function startExWrite() {
+  writeDeck = shuffle(getSetExamples(currentSetName)).filter(e => e.reading);
+  if (!writeDeck.length) { alert('No examples with readings in this set.'); return; }
+  writeIdx = 0; writeCorrect = 0; writeWrong = 0;
+  renderWriteQ();
+  // Swap set-detail body into write mode — inline within the page
+}
+
+function normaliseReading(s) {
+  // Strip spaces, dots, middle dots (・), and long vowel marks for loose comparison
+  return s.trim()
+    .replace(/[\s・.]/g, '')
+    .toLowerCase();
+}
+
+function checkWriteAnswer() {
+  if (writeChecked) return;
+  const e = writeDeck[writeIdx];
+  const inp = document.getElementById('write-inp');
+  if (!inp) return;
+  const answer = inp.value.trim();
+  if (!answer) return;
+
+  writeChecked = true;
+  inp.disabled = true;
+
+  // Accept any segment of the reading that matches (on or kun readings separated by /)
+  // e.g. "にち・じつ / ひ・か" — user just needs to type one correct segment
+  const segments = e.reading.split('/').map(s => s.trim());
+  // Also split on ・ to get individual readings
+  const allReadings = segments.flatMap(s => s.split('・').map(r => r.trim())).filter(Boolean);
+
+  // For example words, the reading is the exact reading in parens — it's a single value
+  // so just do exact normalised match
+  const normAnswer = normaliseReading(answer);
+  const normCorrect = normaliseReading(e.reading);
+  const isCorrect = normAnswer === normCorrect ||
+    allReadings.some(r => normaliseReading(r) === normAnswer);
+
+  if (isCorrect) {
+    writeCorrect++;
+    inp.classList.add('correct');
+    document.getElementById('write-result').innerHTML =
+      `<span class="write-correct-ans">✓ ${e.reading}</span>`;
+  } else {
+    writeWrong++;
+    inp.classList.add('wrong');
+    document.getElementById('write-result').innerHTML =
+      `<span class="write-wrong-ans">✗ &nbsp; Answer: ${e.reading}</span>`;
+  }
+
+  const nextBtn = document.getElementById('write-next');
+  if (nextBtn) {
+    nextBtn.classList.add('show');
+    writeIdx++;
+    nextBtn.textContent = writeIdx < writeDeck.length ? 'Next →' : `Finish — ${writeCorrect}/${writeDeck.length} correct ✓`;
+  }
+}
+
+function nextWriteQ() {
+  if (writeIdx < writeDeck.length) {
+    renderWriteQ();
+  } else {
+    // Show summary back in the set detail body
+    const body = document.getElementById('set-detail-body');
+    const pct = writeDeck.length > 0 ? Math.round(writeCorrect / writeDeck.length * 100) : 0;
+    body.innerHTML = `
+      <div style="text-align:center;padding:30px 20px">
+        <div style="font-family:'DM Serif Display',serif;font-size:2.5rem;color:var(--accent);line-height:1">${pct}%</div>
+        <div style="font-size:.8rem;color:var(--text2);margin:6px 0 20px;letter-spacing:.06em;text-transform:uppercase">Writing score</div>
+        <div style="display:flex;gap:12px;margin-bottom:20px">
+          <div style="flex:1;background:rgba(30,122,74,0.12);border-radius:12px;padding:14px">
+            <div style="font-size:1.5rem;font-weight:700;color:var(--good)">${writeCorrect}</div>
+            <div style="font-size:.65rem;color:var(--text2);text-transform:uppercase;margin-top:2px">Correct</div>
+          </div>
+          <div style="flex:1;background:rgba(192,57,43,0.12);border-radius:12px;padding:14px">
+            <div style="font-size:1.5rem;font-weight:700;color:var(--bad)">${writeWrong}</div>
+            <div style="font-size:.65rem;color:var(--text2);text-transform:uppercase;margin-top:2px">Missed</div>
+          </div>
+        </div>
+        <button class="full-btn" onclick="startExWrite()">Try Again →</button>
+        <button class="full-btn outline" style="margin-top:10px" onclick="setStudyMode('browse')">Back to Set</button>
+      </div>`;
+  }
+}
+
+function renderWriteQ() {
+  writeChecked = false;
+  const e = writeDeck[writeIdx];
+  const body = document.getElementById('set-detail-body');
+  body.innerHTML = `
+    <div class="write-streak">${writeIdx + 1} / ${writeDeck.length} &nbsp;·&nbsp; ✓ ${writeCorrect} &nbsp;·&nbsp; ✗ ${writeWrong}</div>
+    <div class="write-card">
+      <div class="write-prompt-word">${e.word}</div>
+      <div class="write-prompt-meaning">${e.meaning}</div>
+      <div class="write-input-wrap">
+        <input class="write-input" id="write-inp" type="text"
+          placeholder="Type the reading in hiragana…"
+          autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+          onkeydown="if(event.key==='Enter'){checkWriteAnswer();}"
+          oninput="document.getElementById('write-inp').classList.remove('correct','wrong')">
+      </div>
+      <div class="write-hint-row">
+        <span class="write-hint-text">From: ${e.fromKanji} · ${e.fromMeaning}</span>
+        <button class="write-skip-btn" onclick="skipWriteQ()">Skip</button>
+      </div>
+      <div id="write-result" style="min-height:24px;margin-top:6px;text-align:center"></div>
+    </div>
+    <button class="write-check-btn" onclick="checkWriteAnswer()">Check ✓</button>
+    <button class="write-next-btn" id="write-next" onclick="nextWriteQ()">Next →</button>`;
+
+  // Auto-focus input after short delay (mobile keyboard)
+  setTimeout(() => { const inp = document.getElementById('write-inp'); if(inp) inp.focus(); }, 150);
+}
+
+function skipWriteQ() {
+  const e = writeDeck[writeIdx];
+  writeWrong++;
+  const inp = document.getElementById('write-inp');
+  if (inp) {
+    inp.disabled = true;
+    inp.classList.add('wrong');
+  }
+  writeChecked = true;
+  document.getElementById('write-result').innerHTML =
+    `<span class="write-wrong-ans">Skipped — Answer: ${e.reading}</span>`;
+  const nextBtn = document.getElementById('write-next');
+  if (nextBtn) {
+    nextBtn.classList.add('show');
+    writeIdx++;
+    nextBtn.textContent = writeIdx < writeDeck.length ? 'Next →' : `Finish — ${writeCorrect}/${writeDeck.length} correct ✓`;
+  }
+}
+
+// ── Init ──
+renderHome();
+</script>
+
+<!-- EXAMPLES BROWSER -->
+<div class="page" id="page-examples">
+  <div class="section-head">
+    <button class="back-btn" onclick="showPage('home')">← Back</button>
+    <div class="section-title">Examples</div>
+  </div>
+  <div class="ex-filter-row" id="ex-filter-row">
+    <button class="ex-filter-btn active" onclick="filterExamples('all',this)">All</button>
+    <button class="ex-filter-btn" onclick="filterExamples('fav',this)">⭐ Favourites</button>
+  </div>
+  <div id="ex-list"></div>
+</div>
+
+<!-- SETS MANAGER -->
+<div class="page" id="page-sets">
+  <div class="section-head">
+    <button class="back-btn" onclick="showPage('home')">← Back</button>
+    <div class="section-title">Study Sets</div>
+  </div>
+  <div class="new-set-row">
+    <input class="set-name-input" id="new-set-input" placeholder="New set name…" maxlength="30">
+    <button class="set-create-btn" onclick="createSet()">+ Create</button>
+  </div>
+  <div class="sets-list" id="sets-list"></div>
+</div>
+
+<!-- SET DETAIL -->
+<div class="page" id="page-set-detail">
+  <div class="section-head">
+    <button class="back-btn" onclick="showPage('sets')">← Sets</button>
+    <div class="section-title" id="set-detail-title">Set</div>
+  </div>
+  <div class="study-mode-row" style="flex-wrap:wrap">
+    <button class="study-mode-btn active" id="smode-browse" onclick="setStudyMode('browse')" style="flex:1 1 40%">📋 Browse</button>
+    <button class="study-mode-btn" id="smode-flash" onclick="setStudyMode('flash')" style="flex:1 1 40%">📚 Cards</button>
+    <button class="study-mode-btn" id="smode-quiz" onclick="setStudyMode('quiz')" style="flex:1 1 40%">🧠 Quiz</button>
+    <button class="study-mode-btn" id="smode-write" onclick="setStudyMode('write')" style="flex:1 1 40%">✏️ Write</button>
+  </div>
+  <div id="set-detail-body"></div>
+</div>
+
+<!-- EXAMPLE FLASHCARD SESSION -->
+<div class="page" id="page-ex-flash">
+  <div class="section-head">
+    <button class="back-btn" onclick="endExFlash()">✕ End</button>
+    <div class="section-title" id="ex-flash-title">Examples</div>
+  </div>
+  <div class="card-counter" id="ex-flash-counter">1 / 10</div>
+  <div class="ex-card-face" id="ex-card-face" onclick="revealExCard()">
+    <div class="ex-card-word" id="ex-card-word"></div>
+    <div class="ex-card-hint">Tap to reveal</div>
+  </div>
+  <div class="ex-card-back hidden" id="ex-card-back">
+    <div class="word-big" id="ecb-word"></div>
+    <div class="reading-line" id="ecb-reading"></div>
+    <div class="meaning-line" id="ecb-meaning"></div>
+    <div class="from-kanji" id="ecb-from"></div>
+  </div>
+  <div class="answer-btns" id="ex-answer-btns" style="display:none">
+    <button class="ans-btn wrong-btn" onclick="answerExCard(false)">
+      <span class="ans-icon">✗</span><span class="ans-label">Didn't know</span>
+    </button>
+    <button class="ans-btn good-btn" onclick="answerExCard(true)">
+      <span class="ans-icon">✓</span><span class="ans-label">Got it!</span>
+    </button>
+  </div>
+  <div id="ex-reveal-row">
+    <button class="reveal-btn" onclick="revealExCard()">Tap card or press here to reveal</button>
+  </div>
+</div>
+
+<!-- SAVE TO SET MODAL -->
+<div class="modal-overlay" id="saveModal" onclick="closeSaveModal(event)">
+  <div class="modal-sheet">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div class="modal-title" style="margin-bottom:0">Save to set</div>
+      <button onclick="document.getElementById('saveModal').classList.remove('open')" 
+        style="background:var(--tag-bg);border:none;border-radius:99px;padding:6px 12px;font-size:.8rem;cursor:pointer;color:var(--text)">Done</button>
+    </div>
+    <div id="modal-sets-list"></div>
+    <div class="modal-new-row" style="margin-top:14px">
+      <input class="set-name-input" id="modal-new-set-input" placeholder="New set name…" maxlength="30">
+      <button class="set-create-btn" onclick="modalCreateSet()">+ Create</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
