@@ -1,0 +1,1233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>語彙 Vocabulary Learner</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;600;800&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+:root {
+  --bg:       #F7F4EF;
+  --surface:  #FFFFFF;
+  --surface2: #F0EDE8;
+  --border:   #DDD8D0;
+  --text:     #1C1916;
+  --text2:    #6B6560;
+  --text3:    #A09890;
+  --accent:   #C0392B;
+  --accent2:  #E8523E;
+  --good:     #1A7A4A;
+  --ok:       #B07D20;
+  --bad:      #C0392B;
+  --card-bg:  #1C1916;
+  --card-fg:  #F7F4EF;
+  --shadow:   rgba(0,0,0,0.10);
+  --shadow2:  rgba(0,0,0,0.18);
+  --green:    #1A7A4A;
+  --tag-k:    #E6F4EC;
+  --tag-k-t:  #1A7A4A;
+  --tag-u:    #FEF0ED;
+  --tag-u-t:  #C0392B;
+}
+[data-theme="dark"] {
+  --bg:       #111110;
+  --surface:  #1C1B1A;
+  --surface2: #252422;
+  --border:   #2E2C2A;
+  --text:     #F0EDE8;
+  --text2:    #9A9590;
+  --text3:    #5A5550;
+  --accent:   #E8523E;
+  --accent2:  #FF6E58;
+  --good:     #2ECC71;
+  --card-bg:  #F0EDE8;
+  --card-fg:  #1C1B1A;
+  --shadow:   rgba(0,0,0,0.4);
+  --shadow2:  rgba(0,0,0,0.6);
+  --tag-k:    #0F2E1A;
+  --tag-k-t:  #2ECC71;
+  --tag-u:    #2E120E;
+  --tag-u-t:  #E8523E;
+}
+
+* { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+html, body { height:100%; background:var(--bg); color:var(--text); font-family:'DM Sans',sans-serif; overflow:hidden; }
+
+/* ── Layout ── */
+#app { height:100dvh; display:flex; flex-direction:column; max-width:480px; margin:0 auto; position:relative; }
+
+/* ── Header ── */
+#header {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:14px 18px 10px;
+  border-bottom:1px solid var(--border);
+  background:var(--bg);
+  flex-shrink:0;
+}
+#header-title { font-family:'Shippori Mincho',serif; font-size:20px; font-weight:800; letter-spacing:-0.5px; }
+#header-title span { color:var(--accent); }
+#header-right { display:flex; gap:10px; align-items:center; }
+.icon-btn {
+  width:36px; height:36px; border-radius:10px; border:none; cursor:pointer;
+  background:var(--surface2); color:var(--text); font-size:17px;
+  display:flex; align-items:center; justify-content:center;
+  transition:background 0.15s;
+}
+.icon-btn:active { background:var(--border); }
+
+/* ── Nav tabs ── */
+#nav {
+  display:flex; border-bottom:1px solid var(--border);
+  background:var(--bg); flex-shrink:0;
+}
+.nav-tab {
+  flex:1; padding:10px 4px 9px; border:none; background:none; cursor:pointer;
+  font-family:'DM Sans',sans-serif; font-size:12px; font-weight:500;
+  color:var(--text3); letter-spacing:0.3px; text-transform:uppercase;
+  border-bottom:2px solid transparent; transition:all 0.15s;
+}
+.nav-tab.active { color:var(--accent); border-bottom-color:var(--accent); }
+
+/* ── Pages ── */
+.page { flex:1; overflow-y:auto; display:none; flex-direction:column; }
+.page.active { display:flex; }
+
+/* ═══════════════════════════════════
+   HOME PAGE
+═══════════════════════════════════ */
+#page-home { padding:20px 18px; gap:16px; }
+
+.stat-row {
+  display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;
+}
+.stat-card {
+  background:var(--surface); border:1px solid var(--border); border-radius:14px;
+  padding:14px 10px; text-align:center;
+}
+.stat-num { font-family:'Shippori Mincho',serif; font-size:28px; font-weight:800; line-height:1; }
+.stat-label { font-size:10px; font-weight:500; color:var(--text2); text-transform:uppercase; letter-spacing:0.5px; margin-top:4px; }
+.stat-num.green { color:var(--good); }
+.stat-num.red   { color:var(--bad); }
+
+.progress-wrap {
+  background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:16px;
+}
+.progress-label { display:flex; justify-content:space-between; font-size:12px; color:var(--text2); margin-bottom:8px; }
+.progress-bar-bg { height:8px; background:var(--surface2); border-radius:99px; overflow:hidden; }
+.progress-bar-fill { height:100%; border-radius:99px; background:var(--good); transition:width 0.6s ease; }
+
+.section-title { font-size:11px; font-weight:600; color:var(--text3); text-transform:uppercase; letter-spacing:0.8px; margin-bottom:8px; }
+
+.mode-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.mode-card {
+  background:var(--surface); border:1px solid var(--border); border-radius:14px;
+  padding:16px 14px; cursor:pointer; transition:all 0.15s; text-align:left;
+}
+.mode-card:active { transform:scale(0.97); }
+.mode-card .mode-icon { font-size:24px; margin-bottom:8px; }
+.mode-card .mode-name { font-size:14px; font-weight:600; margin-bottom:2px; }
+.mode-card .mode-desc { font-size:11px; color:var(--text2); line-height:1.4; }
+.mode-card.primary { background:var(--card-bg); color:var(--card-fg); border-color:transparent; }
+.mode-card.primary .mode-desc { color:rgba(255,255,255,0.55); }
+[data-theme="dark"] .mode-card.primary .mode-desc { color:rgba(0,0,0,0.5); }
+
+.srs-row { display:grid; grid-template-columns:repeat(5,1fr); gap:6px; }
+.srs-pip {
+  background:var(--surface); border:1px solid var(--border); border-radius:8px;
+  padding:8px 4px; text-align:center;
+}
+.srs-pip .srs-n { font-size:16px; font-weight:700; }
+.srs-pip .srs-l { font-size:9px; color:var(--text3); margin-top:2px; }
+.srs-pip.s1 .srs-n { color:#C0392B; }
+.srs-pip.s2 .srs-n { color:#E67E22; }
+.srs-pip.s3 .srs-n { color:#B07D20; }
+.srs-pip.s4 .srs-n { color:#27AE60; }
+.srs-pip.s5 .srs-n { color:#1A7A4A; }
+
+/* ═══════════════════════════════════
+   FLASHCARD PAGE
+═══════════════════════════════════ */
+#page-flash { padding:0; position:relative; }
+
+#fc-top {
+  padding:14px 18px 10px; display:flex; align-items:center; justify-content:space-between;
+  flex-shrink:0;
+}
+#fc-counter { font-size:13px; color:var(--text2); font-weight:500; }
+#fc-mode-badge {
+  font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px;
+  background:var(--surface2); border:1px solid var(--border); border-radius:20px;
+  padding:4px 10px; color:var(--text2);
+}
+
+#fc-progress-bar { height:3px; background:var(--border); flex-shrink:0; }
+#fc-progress-fill { height:100%; background:var(--accent); transition:width 0.3s ease; }
+
+#fc-area {
+  flex:1; display:flex; flex-direction:column; align-items:center;
+  justify-content:center; padding:20px 18px; gap:0;
+  perspective:1000px;
+}
+
+/* Card flip */
+#fc-card-wrap {
+  width:100%; max-width:380px;
+  height:220px;
+  position:relative;
+  transform-style:preserve-3d;
+  transition:transform 0.45s cubic-bezier(0.4,0,0.2,1);
+  cursor:pointer;
+}
+#fc-card-wrap.flipped { transform:rotateY(180deg); }
+
+.fc-face {
+  position:absolute; inset:0; border-radius:20px;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  padding:28px 24px; backface-visibility:hidden;
+  box-shadow:0 8px 32px var(--shadow2);
+}
+#fc-front {
+  background:var(--card-bg); color:var(--card-fg);
+}
+#fc-back {
+  background:var(--surface); color:var(--text);
+  border:1px solid var(--border);
+  transform:rotateY(180deg);
+}
+
+.fc-direction {
+  font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:1px;
+  opacity:0.4; margin-bottom:12px;
+}
+.fc-word {
+  font-family:'Shippori Mincho',serif; font-size:42px; font-weight:800;
+  text-align:center; line-height:1.1;
+}
+.fc-word.en { font-family:'DM Sans',sans-serif; font-size:26px; font-weight:600; }
+.fc-hint { font-size:12px; opacity:0.35; margin-top:14px; }
+
+.fc-answer-jp { font-family:'Shippori Mincho',serif; font-size:38px; font-weight:700; margin-bottom:6px; }
+.fc-answer-en { font-size:20px; font-weight:500; color:var(--text2); }
+.fc-tap-hint { font-size:11px; color:var(--text3); margin-top:16px; }
+
+/* Rating buttons */
+#fc-ratings {
+  width:100%; max-width:380px;
+  display:flex; gap:8px; margin-top:18px;
+  opacity:0; pointer-events:none; transition:opacity 0.3s;
+}
+#fc-ratings.visible { opacity:1; pointer-events:all; }
+
+.rating-btn {
+  flex:1; padding:12px 4px; border-radius:12px; border:none; cursor:pointer;
+  font-family:'DM Sans',sans-serif; font-size:12px; font-weight:600;
+  transition:all 0.15s; display:flex; flex-direction:column; align-items:center; gap:3px;
+}
+.rating-btn:active { transform:scale(0.93); }
+.rating-btn span { font-size:9px; font-weight:400; opacity:0.7; }
+.rb1 { background:#FDE8E6; color:#C0392B; }
+.rb2 { background:#FEF3E2; color:#D35400; }
+.rb3 { background:#FEF9E5; color:#B07D20; }
+.rb4 { background:#E8F6EF; color:#1E8449; }
+.rb5 { background:#D5F5E3; color:#1A7A4A; }
+
+#fc-skip-btn {
+  margin-top:10px; background:none; border:none; font-size:12px; color:var(--text3);
+  cursor:pointer; padding:6px 12px;
+}
+
+/* Setup screen */
+#fc-setup {
+  flex:1; padding:20px 18px; display:flex; flex-direction:column; gap:14px;
+}
+.setup-opt-group { display:flex; flex-direction:column; gap:8px; }
+.setup-opt {
+  background:var(--surface); border:1.5px solid var(--border); border-radius:12px;
+  padding:14px 16px; cursor:pointer; transition:all 0.15s; display:flex; align-items:center; gap:12px;
+}
+.setup-opt.selected { border-color:var(--accent); background:var(--surface); }
+.setup-opt .opt-dot {
+  width:18px; height:18px; border-radius:50%; border:2px solid var(--border); flex-shrink:0;
+  transition:all 0.15s;
+}
+.setup-opt.selected .opt-dot { background:var(--accent); border-color:var(--accent); }
+.setup-opt .opt-text { font-size:14px; font-weight:500; }
+.setup-opt .opt-sub  { font-size:11px; color:var(--text2); margin-top:1px; }
+
+.start-btn {
+  background:var(--card-bg); color:var(--card-fg); border:none; border-radius:14px;
+  padding:16px; font-family:'DM Sans',sans-serif; font-size:15px; font-weight:600;
+  cursor:pointer; transition:opacity 0.15s; letter-spacing:0.2px;
+}
+.start-btn:active { opacity:0.8; }
+
+/* Summary screen */
+#fc-summary {
+  flex:1; padding:20px 18px; display:none; flex-direction:column; gap:16px; align-items:center; justify-content:center;
+}
+#fc-summary.active { display:flex; }
+.summary-emoji { font-size:52px; }
+.summary-title { font-family:'Shippori Mincho',serif; font-size:26px; font-weight:800; text-align:center; }
+.summary-sub { font-size:14px; color:var(--text2); text-align:center; }
+.summary-stats { display:flex; gap:16px; }
+.summary-stat { text-align:center; }
+.summary-stat-n { font-size:28px; font-weight:700; font-family:'Shippori Mincho',serif; }
+.summary-stat-l { font-size:11px; color:var(--text2); text-transform:uppercase; letter-spacing:0.5px; }
+.summary-btns { display:flex; gap:10px; width:100%; }
+.summary-btns button {
+  flex:1; padding:14px; border-radius:12px; border:1.5px solid var(--border);
+  background:var(--surface); color:var(--text); font-family:'DM Sans',sans-serif;
+  font-size:14px; font-weight:500; cursor:pointer;
+}
+.summary-btns button.primary {
+  background:var(--card-bg); color:var(--card-fg); border-color:transparent;
+}
+
+/* ═══════════════════════════════════
+   QUIZ PAGE
+═══════════════════════════════════ */
+#page-quiz { padding:0; }
+#quiz-top {
+  padding:14px 18px 10px; display:flex; align-items:center; justify-content:space-between; flex-shrink:0;
+}
+#quiz-counter { font-size:13px; color:var(--text2); font-weight:500; }
+#quiz-score-display { font-size:13px; font-weight:600; color:var(--good); }
+#quiz-pb { height:3px; background:var(--border); flex-shrink:0; }
+#quiz-pb-fill { height:100%; background:var(--accent); transition:width 0.3s; }
+
+#quiz-area { flex:1; padding:20px 18px; display:flex; flex-direction:column; gap:14px; }
+
+#quiz-setup { display:flex; flex-direction:column; gap:14px; padding:20px 18px; flex:1; }
+#quiz-question-wrap { display:flex; flex-direction:column; gap:12px; flex:1; }
+
+.quiz-prompt-card {
+  background:var(--card-bg); color:var(--card-fg); border-radius:18px;
+  padding:28px 20px; text-align:center; min-height:130px;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px;
+}
+.quiz-direction { font-size:10px; text-transform:uppercase; letter-spacing:1px; opacity:0.4; }
+.quiz-word { font-family:'Shippori Mincho',serif; font-size:44px; font-weight:800; }
+.quiz-word.en { font-family:'DM Sans',sans-serif; font-size:24px; font-weight:600; }
+
+.quiz-options { display:flex; flex-direction:column; gap:8px; }
+.quiz-opt {
+  background:var(--surface); border:1.5px solid var(--border); border-radius:12px;
+  padding:14px 16px; font-size:15px; font-weight:500; cursor:pointer;
+  transition:all 0.15s; text-align:left; font-family:'DM Sans',sans-serif; color:var(--text);
+}
+.quiz-opt.correct { background:#E8F6EF; border-color:#1E8449; color:#1E8449; }
+.quiz-opt.wrong   { background:#FDE8E6; border-color:#C0392B; color:#C0392B; }
+.quiz-opt:active:not(.correct):not(.wrong) { background:var(--surface2); }
+.quiz-opt.jp-opt  { font-family:'Shippori Mincho',serif; font-size:20px; }
+
+#quiz-next-btn {
+  background:var(--card-bg); color:var(--card-fg); border:none; border-radius:12px;
+  padding:14px; font-family:'DM Sans',sans-serif; font-size:15px; font-weight:600;
+  cursor:pointer; opacity:0; pointer-events:none; transition:opacity 0.2s;
+}
+#quiz-next-btn.visible { opacity:1; pointer-events:all; }
+
+#quiz-summary {
+  display:none; flex-direction:column; gap:16px; align-items:center; justify-content:center;
+  flex:1; padding:20px 18px;
+}
+#quiz-summary.active { display:flex; }
+
+/* ═══════════════════════════════════
+   BROWSE PAGE
+═══════════════════════════════════ */
+#page-browse { padding:0; }
+#browse-search-wrap {
+  padding:12px 18px; border-bottom:1px solid var(--border); flex-shrink:0; background:var(--bg);
+}
+#browse-search {
+  width:100%; padding:10px 14px; border-radius:10px; border:1.5px solid var(--border);
+  background:var(--surface); color:var(--text); font-family:'DM Sans',sans-serif; font-size:14px;
+  outline:none;
+}
+#browse-search:focus { border-color:var(--accent); }
+#browse-filters {
+  display:flex; gap:8px; padding:10px 18px; border-bottom:1px solid var(--border);
+  flex-shrink:0; overflow-x:auto;
+}
+#browse-filters::-webkit-scrollbar { display:none; }
+.filter-chip {
+  white-space:nowrap; padding:6px 14px; border-radius:20px; border:1.5px solid var(--border);
+  background:var(--surface); color:var(--text2); font-size:12px; font-weight:500; cursor:pointer;
+  transition:all 0.15s; flex-shrink:0;
+}
+.filter-chip.active { background:var(--accent); color:#fff; border-color:var(--accent); }
+
+#browse-list { flex:1; overflow-y:auto; padding:8px 18px 20px; }
+.browse-item {
+  display:flex; align-items:center; padding:12px 0; border-bottom:1px solid var(--border);
+  gap:12px; cursor:pointer;
+}
+.browse-item:active { opacity:0.7; }
+.browse-num { font-size:11px; color:var(--text3); width:28px; flex-shrink:0; text-align:right; }
+.browse-jp  { font-family:'Shippori Mincho',serif; font-size:20px; font-weight:600; flex:1; }
+.browse-en  { font-size:13px; color:var(--text2); flex:2; }
+.browse-tag {
+  font-size:10px; font-weight:600; padding:3px 8px; border-radius:20px; flex-shrink:0;
+}
+.browse-tag.k { background:var(--tag-k); color:var(--tag-k-t); }
+.browse-tag.u { background:var(--tag-u); color:var(--tag-u-t); }
+.browse-count { font-size:12px; color:var(--text3); padding:12px 0 4px; font-weight:500; }
+
+/* ═══════════════════════════════════
+   STATS PAGE
+═══════════════════════════════════ */
+#page-stats { padding:20px 18px; gap:14px; }
+
+.stats-block {
+  background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:16px;
+}
+.stats-block h3 { font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:0.6px; color:var(--text3); margin-bottom:14px; }
+.stats-row { display:flex; justify-content:space-between; align-items:center; padding:7px 0; border-bottom:1px solid var(--border); }
+.stats-row:last-child { border-bottom:none; }
+.stats-row-label { font-size:14px; color:var(--text2); }
+.stats-row-val   { font-size:14px; font-weight:600; }
+.stats-row-val.g { color:var(--good); }
+.stats-row-val.r { color:var(--bad); }
+
+.srs-chart { display:flex; flex-direction:column; gap:8px; }
+.srs-bar-row { display:flex; align-items:center; gap:10px; }
+.srs-bar-label { font-size:12px; color:var(--text2); width:64px; flex-shrink:0; }
+.srs-bar-track { flex:1; height:8px; background:var(--surface2); border-radius:99px; overflow:hidden; }
+.srs-bar-fill  { height:100%; border-radius:99px; transition:width 0.5s ease; }
+.srs-bar-count { font-size:12px; color:var(--text3); width:28px; text-align:right; flex-shrink:0; }
+.b1 { background:#C0392B; } .b2 { background:#E67E22; } .b3 { background:#B07D20; }
+.b4 { background:#27AE60; } .b5 { background:#1A7A4A; }
+
+/* ── Utility ── */
+.hidden { display:none !important; }
+</style>
+</head>
+<body data-theme="light">
+<div id="app">
+
+  <!-- HEADER -->
+  <div id="header">
+    <div id="header-title">語彙<span>.</span></div>
+    <div id="header-right">
+      <button class="icon-btn" id="theme-btn" title="Toggle theme">☀</button>
+    </div>
+  </div>
+
+  <!-- NAV -->
+  <div id="nav">
+    <button class="nav-tab active" data-page="home">Home</button>
+    <button class="nav-tab" data-page="flash">Flashcards</button>
+    <button class="nav-tab" data-page="quiz">Quiz</button>
+    <button class="nav-tab" data-page="browse">Browse</button>
+    <button class="nav-tab" data-page="stats">Stats</button>
+  </div>
+
+  <!-- ═══ HOME ═══ -->
+  <div id="page-home" class="page active">
+    <div class="stat-row">
+      <div class="stat-card">
+        <div class="stat-num" id="h-total">883</div>
+        <div class="stat-label">Total</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num green" id="h-known">0</div>
+        <div class="stat-label">Known</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num red" id="h-due">0</div>
+        <div class="stat-label">Due</div>
+      </div>
+    </div>
+
+    <div class="progress-wrap">
+      <div class="progress-label">
+        <span>Progress</span>
+        <span id="h-pct">0%</span>
+      </div>
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill" id="h-bar" style="width:0%"></div>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-title">Study</div>
+      <div class="mode-grid">
+        <div class="mode-card primary" onclick="startFlash('due')">
+          <div class="mode-icon">🃏</div>
+          <div class="mode-name">Flashcards</div>
+          <div class="mode-desc">Study words due for review</div>
+        </div>
+        <div class="mode-card" onclick="startQuiz('unknown')">
+          <div class="mode-icon">⚡</div>
+          <div class="mode-name">Quick Quiz</div>
+          <div class="mode-desc">4-choice multiple choice</div>
+        </div>
+        <div class="mode-card" onclick="startFlash('unknown')">
+          <div class="mode-icon">📚</div>
+          <div class="mode-name">All Unknown</div>
+          <div class="mode-desc">Study your 317 to-learn words</div>
+        </div>
+        <div class="mode-card" onclick="startFlash('all')">
+          <div class="mode-icon">🔄</div>
+          <div class="mode-name">Full Review</div>
+          <div class="mode-desc">All 883 words shuffled</div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-title">SRS Breakdown</div>
+      <div class="srs-row">
+        <div class="srs-pip s1"><div class="srs-n" id="srs1">0</div><div class="srs-l">New</div></div>
+        <div class="srs-pip s2"><div class="srs-n" id="srs2">0</div><div class="srs-l">Seen</div></div>
+        <div class="srs-pip s3"><div class="srs-n" id="srs3">0</div><div class="srs-l">Weak</div></div>
+        <div class="srs-pip s4"><div class="srs-n" id="srs4">0</div><div class="srs-l">Good</div></div>
+        <div class="srs-pip s5"><div class="srs-n" id="srs5">0</div><div class="srs-l">Expert</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ FLASHCARDS ═══ -->
+  <div id="page-flash" class="page">
+
+    <!-- Setup -->
+    <div id="fc-setup">
+      <div class="section-title">Choose deck</div>
+      <div class="setup-opt-group" id="fc-deck-opts">
+        <div class="setup-opt selected" data-val="due" onclick="selectOpt(this,'fc-deck-opts')">
+          <div class="opt-dot"></div>
+          <div><div class="opt-text">Due for review</div><div class="opt-sub">Words scheduled today</div></div>
+        </div>
+        <div class="setup-opt" data-val="unknown" onclick="selectOpt(this,'fc-deck-opts')">
+          <div class="opt-dot"></div>
+          <div><div class="opt-text">Unknown words</div><div class="opt-sub">Your 317 to-learn words</div></div>
+        </div>
+        <div class="setup-opt" data-val="known" onclick="selectOpt(this,'fc-deck-opts')">
+          <div class="opt-dot"></div>
+          <div><div class="opt-text">Known words</div><div class="opt-sub">Your 566 known words — review</div></div>
+        </div>
+        <div class="setup-opt" data-val="all" onclick="selectOpt(this,'fc-deck-opts')">
+          <div class="opt-dot"></div>
+          <div><div class="opt-text">All words</div><div class="opt-sub">All 883 shuffled</div></div>
+        </div>
+      </div>
+
+      <div class="section-title">Direction</div>
+      <div class="setup-opt-group" id="fc-dir-opts">
+        <div class="setup-opt selected" data-val="mix" onclick="selectOpt(this,'fc-dir-opts')">
+          <div class="opt-dot"></div>
+          <div><div class="opt-text">Mix — random each card</div></div>
+        </div>
+        <div class="setup-opt" data-val="jp" onclick="selectOpt(this,'fc-dir-opts')">
+          <div class="opt-dot"></div>
+          <div><div class="opt-text">Japanese → English</div></div>
+        </div>
+        <div class="setup-opt" data-val="en" onclick="selectOpt(this,'fc-dir-opts')">
+          <div class="opt-dot"></div>
+          <div><div class="opt-text">English → Japanese</div></div>
+        </div>
+      </div>
+
+      <div class="section-title">How many cards</div>
+      <div class="setup-opt-group" id="fc-count-opts">
+        <div class="setup-opt selected" data-val="6" onclick="selectOpt(this,'fc-count-opts')">
+          <div class="opt-dot"></div><div><div class="opt-text">6 cards</div></div>
+        </div>
+        <div class="setup-opt" data-val="20" onclick="selectOpt(this,'fc-count-opts')">
+          <div class="opt-dot"></div><div><div class="opt-text">20 cards</div></div>
+        </div>
+        <div class="setup-opt" data-val="50" onclick="selectOpt(this,'fc-count-opts')">
+          <div class="opt-dot"></div><div><div class="opt-text">50 cards</div></div>
+        </div>
+        <div class="setup-opt" data-val="all" onclick="selectOpt(this,'fc-count-opts')">
+          <div class="opt-dot"></div><div><div class="opt-text">All in deck</div></div>
+        </div>
+      </div>
+
+      <button class="start-btn" onclick="startFlashFromSetup()">Start Flashcards →</button>
+    </div>
+
+    <!-- Active card area -->
+    <div id="fc-active" class="hidden" style="display:none;flex-direction:column;flex:1;">
+      <div id="fc-top">
+        <div id="fc-counter">0 / 0</div>
+        <div id="fc-mode-badge">Mix</div>
+      </div>
+      <div id="fc-progress-bar"><div id="fc-progress-fill" style="width:0%"></div></div>
+      <div id="fc-area">
+        <div id="fc-card-wrap" onclick="flipCard()">
+          <div class="fc-face" id="fc-front">
+            <div class="fc-direction" id="fc-dir-label">Japanese</div>
+            <div class="fc-word" id="fc-front-word">—</div>
+            <div class="fc-hint">tap to reveal</div>
+          </div>
+          <div class="fc-face" id="fc-back">
+            <div id="fc-back-jp" class="fc-answer-jp"></div>
+            <div id="fc-back-en" class="fc-answer-en"></div>
+            <div class="fc-tap-hint">rate yourself below</div>
+          </div>
+        </div>
+        <div id="fc-ratings">
+          <button class="rating-btn rb1" onclick="rateCard(1)">✗<span>No idea</span></button>
+          <button class="rating-btn rb2" onclick="rateCard(2)">△<span>Seen it</span></button>
+          <button class="rating-btn rb3" onclick="rateCard(3)">~<span>Almost</span></button>
+          <button class="rating-btn rb4" onclick="rateCard(4)">✓<span>Know it</span></button>
+          <button class="rating-btn rb5" onclick="rateCard(5)">★<span>Expert</span></button>
+        </div>
+        <button id="fc-skip-btn" onclick="skipCard()">skip →</button>
+      </div>
+    </div>
+
+    <!-- Summary -->
+    <div id="fc-summary">
+      <div class="summary-emoji" id="fc-sum-emoji">🎉</div>
+      <div class="summary-title" id="fc-sum-title">Session complete!</div>
+      <div class="summary-sub" id="fc-sum-sub">You reviewed 20 cards</div>
+      <div class="summary-stats">
+        <div class="summary-stat">
+          <div class="summary-stat-n" id="fc-sum-good" style="color:var(--good)">0</div>
+          <div class="summary-stat-l">Known</div>
+        </div>
+        <div class="summary-stat">
+          <div class="summary-stat-n" style="color:var(--text2)">·</div>
+          <div class="summary-stat-l"></div>
+        </div>
+        <div class="summary-stat">
+          <div class="summary-stat-n" id="fc-sum-bad" style="color:var(--bad)">0</div>
+          <div class="summary-stat-l">Needs work</div>
+        </div>
+      </div>
+      <div class="summary-btns">
+        <button onclick="showPage('flash');resetFlash()">New session</button>
+        <button class="primary" onclick="showPage('home')">Home</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ═══ QUIZ ═══ -->
+  <div id="page-quiz" class="page">
+    <div id="quiz-setup" style="display:flex">
+      <div class="section-title">Quiz deck</div>
+      <div class="setup-opt-group" id="qz-deck-opts">
+        <div class="setup-opt selected" data-val="unknown" onclick="selectOpt(this,'qz-deck-opts')">
+          <div class="opt-dot"></div>
+          <div><div class="opt-text">Unknown words</div><div class="opt-sub">317 to-learn words</div></div>
+        </div>
+        <div class="setup-opt" data-val="weak" onclick="selectOpt(this,'qz-deck-opts')">
+          <div class="opt-dot"></div>
+          <div><div class="opt-text">Weak words</div><div class="opt-sub">SRS rating 1–2</div></div>
+        </div>
+        <div class="setup-opt" data-val="all" onclick="selectOpt(this,'qz-deck-opts')">
+          <div class="opt-dot"></div>
+          <div><div class="opt-text">All words</div></div>
+        </div>
+      </div>
+      <div class="section-title">Direction</div>
+      <div class="setup-opt-group" id="qz-dir-opts">
+        <div class="setup-opt selected" data-val="mix" onclick="selectOpt(this,'qz-dir-opts')">
+          <div class="opt-dot"></div><div><div class="opt-text">Mix</div></div>
+        </div>
+        <div class="setup-opt" data-val="jp" onclick="selectOpt(this,'qz-dir-opts')">
+          <div class="opt-dot"></div><div><div class="opt-text">Japanese → English</div></div>
+        </div>
+        <div class="setup-opt" data-val="en" onclick="selectOpt(this,'qz-dir-opts')">
+          <div class="opt-dot"></div><div><div class="opt-text">English → Japanese</div></div>
+        </div>
+      </div>
+      <div class="section-title">How many questions</div>
+      <div class="setup-opt-group" id="qz-count-opts">
+        <div class="setup-opt selected" data-val="6" onclick="selectOpt(this,'qz-count-opts')">
+          <div class="opt-dot"></div><div><div class="opt-text">6 questions</div></div>
+        </div>
+        <div class="setup-opt" data-val="10" onclick="selectOpt(this,'qz-count-opts')">
+          <div class="opt-dot"></div><div><div class="opt-text">10 questions</div></div>
+        </div>
+        <div class="setup-opt" data-val="20" onclick="selectOpt(this,'qz-count-opts')">
+          <div class="opt-dot"></div><div><div class="opt-text">20 questions</div></div>
+        </div>
+        <div class="setup-opt" data-val="50" onclick="selectOpt(this,'qz-count-opts')">
+          <div class="opt-dot"></div><div><div class="opt-text">50 questions</div></div>
+        </div>
+        <div class="setup-opt" data-val="all" onclick="selectOpt(this,'qz-count-opts')">
+          <div class="opt-dot"></div><div><div class="opt-text">All in deck</div></div>
+        </div>
+      </div>
+      <button class="start-btn" onclick="startQuizFromSetup()">Start Quiz →</button>
+    </div>
+
+    <div id="quiz-active" style="display:none;flex-direction:column;flex:1;">
+      <div id="quiz-top">
+        <div id="quiz-counter">1 / 20</div>
+        <div id="quiz-score-display">0 ✓</div>
+      </div>
+      <div id="quiz-pb"><div id="quiz-pb-fill" style="width:0%"></div></div>
+      <div id="quiz-question-wrap" style="display:flex;flex-direction:column;gap:12px;padding:16px 18px;flex:1;">
+        <div class="quiz-prompt-card">
+          <div class="quiz-direction" id="qz-dir-label">Japanese</div>
+          <div class="quiz-word" id="qz-word">—</div>
+        </div>
+        <div class="quiz-options" id="qz-options"></div>
+        <button id="quiz-next-btn" onclick="quizNext()">Next →</button>
+      </div>
+    </div>
+
+    <div id="quiz-summary">
+      <div class="summary-emoji" id="qz-sum-emoji">🎉</div>
+      <div class="summary-title" id="qz-sum-title">Quiz done!</div>
+      <div class="summary-sub" id="qz-sum-sub"></div>
+      <div class="summary-stats">
+        <div class="summary-stat">
+          <div class="summary-stat-n" id="qz-sum-score" style="color:var(--good)">0</div>
+          <div class="summary-stat-l">Correct</div>
+        </div>
+        <div class="summary-stat">
+          <div class="summary-stat-n" style="color:var(--text2)">·</div><div class="summary-stat-l"></div>
+        </div>
+        <div class="summary-stat">
+          <div class="summary-stat-n" id="qz-sum-wrong" style="color:var(--bad)">0</div>
+          <div class="summary-stat-l">Wrong</div>
+        </div>
+      </div>
+      <div class="summary-btns">
+        <button onclick="resetQuiz()">Again</button>
+        <button class="primary" onclick="showPage('home')">Home</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ BROWSE ═══ -->
+  <div id="page-browse" class="page">
+    <div id="browse-search-wrap">
+      <input id="browse-search" type="search" placeholder="Search Japanese or English…" oninput="renderBrowse()">
+    </div>
+    <div id="browse-filters">
+      <div class="filter-chip active" data-filter="all" onclick="setBrowseFilter(this)">All (883)</div>
+      <div class="filter-chip" data-filter="unknown" onclick="setBrowseFilter(this)">To learn (317)</div>
+      <div class="filter-chip" data-filter="known" onclick="setBrowseFilter(this)">Known (566)</div>
+    </div>
+    <div id="browse-list"></div>
+  </div>
+
+  <!-- ═══ STATS ═══ -->
+  <div id="page-stats" class="page">
+    <div class="stats-block">
+      <h3>Overall Progress</h3>
+      <div class="stats-row"><div class="stats-row-label">Total words</div><div class="stats-row-val" id="st-total">883</div></div>
+      <div class="stats-row"><div class="stats-row-label">Known (SRS 4–5)</div><div class="stats-row-val g" id="st-known">0</div></div>
+      <div class="stats-row"><div class="stats-row-label">Learning (SRS 2–3)</div><div class="stats-row-val" id="st-learning">0</div></div>
+      <div class="stats-row"><div class="stats-row-label">New / unseen</div><div class="stats-row-val r" id="st-new">0</div></div>
+      <div class="stats-row"><div class="stats-row-label">Due for review</div><div class="stats-row-val" id="st-due">0</div></div>
+      <div class="stats-row"><div class="stats-row-label">Sessions today</div><div class="stats-row-val" id="st-sessions">0</div></div>
+    </div>
+    <div class="stats-block">
+      <h3>SRS Distribution</h3>
+      <div class="srs-chart">
+        <div class="srs-bar-row"><div class="srs-bar-label">✗ No idea</div><div class="srs-bar-track"><div class="srs-bar-fill b1" id="sb1" style="width:0%"></div></div><div class="srs-bar-count" id="sc1">0</div></div>
+        <div class="srs-bar-row"><div class="srs-bar-label">△ Seen it</div><div class="srs-bar-track"><div class="srs-bar-fill b2" id="sb2" style="width:0%"></div></div><div class="srs-bar-count" id="sc2">0</div></div>
+        <div class="srs-bar-row"><div class="srs-bar-label">~ Almost</div><div class="srs-bar-track"><div class="srs-bar-fill b3" id="sb3" style="width:0%"></div></div><div class="srs-bar-count" id="sc3">0</div></div>
+        <div class="srs-bar-row"><div class="srs-bar-label">✓ Know it</div><div class="srs-bar-track"><div class="srs-bar-fill b4" id="sb4" style="width:0%"></div></div><div class="srs-bar-count" id="sc4">0</div></div>
+        <div class="srs-bar-row"><div class="srs-bar-label">★ Expert</div><div class="srs-bar-track"><div class="srs-bar-fill b5" id="sb5" style="width:0%"></div></div><div class="srs-bar-count" id="sc5">0</div></div>
+      </div>
+    </div>
+    <div class="stats-block">
+      <h3>Imported from spreadsheet</h3>
+      <div class="stats-row"><div class="stats-row-label">File 1 (#1–425)</div><div class="stats-row-val g">375 / 425</div></div>
+      <div class="stats-row"><div class="stats-row-label">File 2 (#426–883)</div><div class="stats-row-val">191 / 458</div></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const WORDS = [{"id":1,"j":"いち","e":"one","k":true},{"id":2,"j":"に","e":"two","k":true},{"id":3,"j":"さん","e":"three","k":true},{"id":4,"j":"し/よん","e":"four","k":true},{"id":5,"j":"ご","e":"five","k":true},{"id":6,"j":"ろく","e":"six","k":true},{"id":7,"j":"しち/なな","e":"seven","k":true},{"id":8,"j":"はち","e":"eight","k":true},{"id":9,"j":"く/きゅう","e":"nine","k":true},{"id":10,"j":"じゅう","e":"ten","k":true},{"id":11,"j":"ひゃく","e":"hundred","k":true},{"id":12,"j":"せん","e":"thousand","k":true},{"id":13,"j":"まん","e":"ten thousand","k":true},{"id":14,"j":"おく","e":"hundred million","k":true},{"id":15,"j":"いま","e":"now","k":true},{"id":16,"j":"きょう","e":"today","k":true},{"id":17,"j":"きのう","e":"yesterday","k":true},{"id":18,"j":"あした","e":"tomorrow","k":true},{"id":19,"j":"あさ","e":"morning","k":true},{"id":20,"j":"ひる","e":"noon/daytime","k":true},{"id":21,"j":"よる","e":"night","k":true},{"id":22,"j":"ばん","e":"evening","k":true},{"id":23,"j":"ことし","e":"this year","k":true},{"id":24,"j":"らいねん","e":"next year","k":true},{"id":25,"j":"きょねん","e":"last year","k":true},{"id":26,"j":"まいにち","e":"every day","k":true},{"id":27,"j":"まいあさ","e":"every morning","k":true},{"id":28,"j":"まいばん","e":"every evening","k":false},{"id":29,"j":"じかん","e":"time/hour","k":true},{"id":30,"j":"ふん/ぷん","e":"minute","k":true},{"id":31,"j":"びょう","e":"second","k":true},{"id":32,"j":"しゅうかん","e":"week","k":true},{"id":33,"j":"かげつ","e":"month(s)","k":true},{"id":34,"j":"ねん","e":"year","k":true},{"id":35,"j":"げつようび","e":"Monday","k":true},{"id":36,"j":"かようび","e":"Tuesday","k":true},{"id":37,"j":"すいようび","e":"Wednesday","k":true},{"id":38,"j":"もくようび","e":"Thursday","k":true},{"id":39,"j":"きんようび","e":"Friday","k":true},{"id":40,"j":"どようび","e":"Saturday","k":true},{"id":41,"j":"にちようび","e":"Sunday","k":true},{"id":42,"j":"いちがつ","e":"January","k":true},{"id":43,"j":"にがつ","e":"February","k":true},{"id":44,"j":"さんがつ","e":"March","k":true},{"id":45,"j":"しがつ","e":"April","k":true},{"id":46,"j":"ごがつ","e":"May","k":true},{"id":47,"j":"ろくがつ","e":"June","k":true},{"id":48,"j":"しちがつ","e":"July","k":true},{"id":49,"j":"はちがつ","e":"August","k":true},{"id":50,"j":"くがつ","e":"September","k":true},{"id":51,"j":"じゅうがつ","e":"October","k":true},{"id":52,"j":"じゅういちがつ","e":"November","k":true},{"id":53,"j":"じゅうにがつ","e":"December","k":true},{"id":54,"j":"わたし","e":"I/me","k":true},{"id":55,"j":"ぼく","e":"I/me (male)","k":true},{"id":56,"j":"あなた","e":"you","k":true},{"id":57,"j":"かれ","e":"he/him","k":true},{"id":58,"j":"かのじょ","e":"she/her","k":true},{"id":59,"j":"わたしたち","e":"we/us","k":true},{"id":60,"j":"かれら","e":"they/them","k":true},{"id":61,"j":"ひと","e":"person","k":true},{"id":62,"j":"おとこ","e":"man/male","k":true},{"id":63,"j":"おんな","e":"woman/female","k":true},{"id":64,"j":"こども","e":"child","k":true},{"id":65,"j":"おとな","e":"adult","k":false},{"id":66,"j":"ともだち","e":"friend","k":true},{"id":67,"j":"かぞく","e":"family","k":true},{"id":68,"j":"おかあさん","e":"mother","k":true},{"id":69,"j":"おとうさん","e":"father","k":true},{"id":70,"j":"おにいさん","e":"older brother","k":true},{"id":71,"j":"おねえさん","e":"older sister","k":true},{"id":72,"j":"おとうと","e":"younger brother","k":true},{"id":73,"j":"いもうと","e":"younger sister","k":true},{"id":74,"j":"そふ","e":"grandfather","k":false},{"id":75,"j":"そぼ","e":"grandmother","k":false},{"id":76,"j":"むすこ","e":"son","k":true},{"id":77,"j":"むすめ","e":"daughter","k":true},{"id":78,"j":"おじさん","e":"uncle/middle-aged man","k":true},{"id":79,"j":"おばさん","e":"aunt/middle-aged woman","k":true},{"id":80,"j":"せんせい","e":"teacher","k":true},{"id":81,"j":"がくせい","e":"student","k":true},{"id":82,"j":"いしゃ","e":"doctor","k":false},{"id":83,"j":"かんごし","e":"nurse","k":false},{"id":84,"j":"おはよう","e":"good morning","k":true},{"id":85,"j":"こんにちは","e":"hello/good afternoon","k":true},{"id":86,"j":"こんばんは","e":"good evening","k":true},{"id":87,"j":"さようなら","e":"goodbye","k":true},{"id":88,"j":"ありがとう","e":"thank you","k":true},{"id":89,"j":"すみません","e":"excuse me/sorry","k":true},{"id":90,"j":"はい","e":"yes","k":true},{"id":91,"j":"いいえ","e":"no","k":true},{"id":92,"j":"おねがいします","e":"please","k":true},{"id":93,"j":"どういたしまして","e":"you're welcome","k":true},{"id":94,"j":"ごめんなさい","e":"I'm sorry","k":true},{"id":95,"j":"わかりました","e":"I understand","k":true},{"id":96,"j":"わかりません","e":"I don't understand","k":true},{"id":97,"j":"うち","e":"home/house","k":true},{"id":98,"j":"がっこう","e":"school","k":true},{"id":99,"j":"しごと","e":"work/job","k":true},{"id":100,"j":"みせ","e":"shop/store","k":true},{"id":101,"j":"えき","e":"train station","k":true},{"id":102,"j":"びょういん","e":"hospital","k":true},{"id":103,"j":"こうえん","e":"park","k":true},{"id":104,"j":"としょかん","e":"library","k":false},{"id":105,"j":"ぎんこう","e":"bank","k":true},{"id":106,"j":"ゆうびんきょく","e":"post office","k":false},{"id":107,"j":"ホテル","e":"hotel","k":true},{"id":108,"j":"レストラン","e":"restaurant","k":true},{"id":109,"j":"スーパー","e":"supermarket","k":true},{"id":110,"j":"デパート","e":"department store","k":true},{"id":111,"j":"くうこう","e":"airport","k":false},{"id":112,"j":"みなと","e":"harbor/port","k":false},{"id":113,"j":"やま","e":"mountain","k":true},{"id":114,"j":"うみ","e":"sea/ocean","k":true},{"id":115,"j":"かわ","e":"river","k":true},{"id":116,"j":"まち","e":"town/city","k":true},{"id":117,"j":"むら","e":"village","k":false},{"id":118,"j":"くに","e":"country/nation","k":true},{"id":119,"j":"にほん","e":"Japan","k":true},{"id":120,"j":"でんしゃ","e":"train","k":true},{"id":121,"j":"バス","e":"bus","k":true},{"id":122,"j":"タクシー","e":"taxi","k":true},{"id":123,"j":"ひこうき","e":"airplane","k":true},{"id":124,"j":"ふね","e":"ship/boat","k":true},{"id":125,"j":"じてんしゃ","e":"bicycle","k":true},{"id":126,"j":"くるま","e":"car","k":true},{"id":127,"j":"あるく","e":"to walk","k":true},{"id":128,"j":"たべもの","e":"food","k":true},{"id":129,"j":"のみもの","e":"drink","k":true},{"id":130,"j":"ごはん","e":"rice/meal","k":true},{"id":131,"j":"パン","e":"bread","k":true},{"id":132,"j":"にく","e":"meat","k":true},{"id":133,"j":"さかな","e":"fish","k":true},{"id":134,"j":"やさい","e":"vegetable","k":true},{"id":135,"j":"くだもの","e":"fruit","k":true},{"id":136,"j":"たまご","e":"egg","k":true},{"id":137,"j":"ぎゅうにゅう","e":"milk","k":true},{"id":138,"j":"みず","e":"water","k":true},{"id":139,"j":"おちゃ","e":"tea","k":true},{"id":140,"j":"コーヒー","e":"coffee","k":true},{"id":141,"j":"ジュース","e":"juice","k":true},{"id":142,"j":"ビール","e":"beer","k":true},{"id":143,"j":"さけ","e":"sake/alcohol","k":true},{"id":144,"j":"しお","e":"salt","k":true},{"id":145,"j":"さとう","e":"sugar","k":false},{"id":146,"j":"しょうゆ","e":"soy sauce","k":true},{"id":147,"j":"あぶら","e":"oil","k":true},{"id":148,"j":"りんご","e":"apple","k":true},{"id":149,"j":"バナナ","e":"banana","k":true},{"id":150,"j":"みかん","e":"mandarin orange","k":true},{"id":151,"j":"いちご","e":"strawberry","k":true},{"id":152,"j":"すし","e":"sushi","k":true},{"id":153,"j":"ラーメン","e":"ramen","k":true},{"id":154,"j":"そば","e":"soba noodles","k":true},{"id":155,"j":"うどん","e":"udon noodles","k":true},{"id":156,"j":"てんぷら","e":"tempura","k":true},{"id":157,"j":"カレー","e":"curry","k":true},{"id":158,"j":"からだ","e":"body","k":true},{"id":159,"j":"あたま","e":"head","k":true},{"id":160,"j":"かみ","e":"hair","k":true},{"id":161,"j":"め","e":"eye","k":true},{"id":162,"j":"みみ","e":"ear","k":true},{"id":163,"j":"はな","e":"nose","k":true},{"id":164,"j":"くち","e":"mouth","k":true},{"id":165,"j":"は","e":"tooth","k":true},{"id":166,"j":"て","e":"hand","k":true},{"id":167,"j":"あし","e":"leg/foot","k":true},{"id":168,"j":"せなか","e":"back","k":true},{"id":169,"j":"おなか","e":"stomach/belly","k":true},{"id":170,"j":"こころ","e":"heart/mind","k":true},{"id":171,"j":"かお","e":"face","k":true},{"id":172,"j":"あか","e":"red","k":true},{"id":173,"j":"あお","e":"blue","k":true},{"id":174,"j":"しろ","e":"white","k":true},{"id":175,"j":"くろ","e":"black","k":true},{"id":176,"j":"きいろ","e":"yellow","k":true},{"id":177,"j":"みどり","e":"green","k":true},{"id":178,"j":"おれんじ","e":"orange","k":true},{"id":179,"j":"むらさき","e":"purple","k":true},{"id":180,"j":"ちゃいろ","e":"brown","k":true},{"id":181,"j":"ぴんく","e":"pink","k":true},{"id":182,"j":"おおきい","e":"big","k":true},{"id":183,"j":"ちいさい","e":"small","k":true},{"id":184,"j":"たかい","e":"tall/expensive","k":true},{"id":185,"j":"ひくい","e":"low/short","k":true},{"id":186,"j":"ながい","e":"long","k":true},{"id":187,"j":"みじかい","e":"short","k":true},{"id":188,"j":"おもい","e":"heavy","k":true},{"id":189,"j":"かるい","e":"light","k":false},{"id":190,"j":"あつい","e":"hot","k":true},{"id":191,"j":"さむい","e":"cold","k":true},{"id":192,"j":"あたたかい","e":"warm","k":true},{"id":193,"j":"すずしい","e":"cool","k":false},{"id":194,"j":"はやい","e":"fast/early","k":true},{"id":195,"j":"おそい","e":"slow/late","k":true},{"id":196,"j":"あたらしい","e":"new","k":true},{"id":197,"j":"ふるい","e":"old","k":true},{"id":198,"j":"いい/よい","e":"good","k":true},{"id":199,"j":"わるい","e":"bad","k":true},{"id":200,"j":"むずかしい","e":"difficult","k":true},{"id":201,"j":"やさしい","e":"easy/kind","k":true},{"id":202,"j":"おもしろい","e":"interesting/fun","k":true},{"id":203,"j":"つまらない","e":"boring","k":false},{"id":204,"j":"うれしい","e":"happy","k":true},{"id":205,"j":"かなしい","e":"sad","k":false},{"id":206,"j":"いそがしい","e":"busy","k":true},{"id":207,"j":"ひま","e":"free time/not busy","k":true},{"id":208,"j":"げんき","e":"healthy/energetic","k":true},{"id":209,"j":"きれい","e":"pretty/clean","k":true},{"id":210,"j":"かわいい","e":"cute","k":true},{"id":211,"j":"かっこいい","e":"cool/handsome","k":true},{"id":212,"j":"おいしい","e":"delicious","k":true},{"id":213,"j":"まずい","e":"bad tasting","k":false},{"id":214,"j":"たのしい","e":"fun/enjoyable","k":true},{"id":215,"j":"こわい","e":"scary","k":true},{"id":216,"j":"さびしい","e":"lonely","k":false},{"id":217,"j":"はずかしい","e":"embarrassed","k":true},{"id":218,"j":"つよい","e":"strong","k":true},{"id":219,"j":"よわい","e":"weak","k":true},{"id":220,"j":"じょうず","e":"skilled/good at","k":true},{"id":221,"j":"へた","e":"unskilled/bad at","k":false},{"id":222,"j":"ある","e":"to exist (inanimate)","k":true},{"id":223,"j":"いる","e":"to exist (animate)","k":true},{"id":224,"j":"する","e":"to do","k":true},{"id":225,"j":"なる","e":"to become","k":true},{"id":226,"j":"いく","e":"to go","k":true},{"id":227,"j":"くる","e":"to come","k":true},{"id":228,"j":"かえる","e":"to return home","k":true},{"id":229,"j":"たべる","e":"to eat","k":true},{"id":230,"j":"のむ","e":"to drink","k":true},{"id":231,"j":"みる","e":"to see/watch","k":true},{"id":232,"j":"きく","e":"to listen/ask","k":true},{"id":233,"j":"はなす","e":"to speak","k":true},{"id":234,"j":"よむ","e":"to read","k":true},{"id":235,"j":"かく","e":"to write","k":true},{"id":236,"j":"かう","e":"to buy","k":true},{"id":237,"j":"うる","e":"to sell","k":true},{"id":238,"j":"おく","e":"to put/place","k":true},{"id":239,"j":"もつ","e":"to hold/have","k":false},{"id":240,"j":"あげる","e":"to give","k":true},{"id":241,"j":"もらう","e":"to receive","k":true},{"id":242,"j":"かりる","e":"to borrow","k":false},{"id":243,"j":"かす","e":"to lend","k":false},{"id":244,"j":"つかう","e":"to use","k":true},{"id":245,"j":"あける","e":"to open","k":true},{"id":246,"j":"しめる","e":"to close","k":true},{"id":247,"j":"つける","e":"to turn on","k":false},{"id":248,"j":"けす","e":"to turn off","k":false},{"id":249,"j":"おきる","e":"to wake up/get up","k":true},{"id":250,"j":"ねる","e":"to sleep","k":true},{"id":251,"j":"あう","e":"to meet","k":true},{"id":252,"j":"まつ","e":"to wait","k":true},{"id":253,"j":"おわる","e":"to finish","k":true},{"id":254,"j":"はじまる","e":"to begin","k":true},{"id":255,"j":"はたらく","e":"to work","k":true},{"id":256,"j":"べんきょうする","e":"to study","k":true},{"id":257,"j":"れんしゅうする","e":"to practice","k":true},{"id":258,"j":"りょこうする","e":"to travel","k":false},{"id":259,"j":"でんわする","e":"to call","k":true},{"id":260,"j":"そうじする","e":"to clean","k":true},{"id":261,"j":"りょうりする","e":"to cook","k":true},{"id":262,"j":"うんどうする","e":"to exercise","k":false},{"id":263,"j":"けっこんする","e":"to marry","k":true},{"id":264,"j":"りこんする","e":"to divorce","k":false},{"id":265,"j":"しぬ","e":"to die","k":true},{"id":266,"j":"うまれる","e":"to be born","k":true},{"id":267,"j":"そだつ","e":"to grow up","k":false},{"id":268,"j":"わかる","e":"to understand","k":true},{"id":269,"j":"しる","e":"to know","k":true},{"id":270,"j":"おぼえる","e":"to remember/memorize","k":true},{"id":271,"j":"わすれる","e":"to forget","k":true},{"id":272,"j":"おしえる","e":"to teach/tell","k":true},{"id":273,"j":"きめる","e":"to decide","k":false},{"id":274,"j":"かんがえる","e":"to think/consider","k":true},{"id":275,"j":"しんじる","e":"to believe","k":true},{"id":276,"j":"あいする","e":"to love","k":true},{"id":277,"j":"すき","e":"to like","k":true},{"id":278,"j":"きらい","e":"to dislike","k":true},{"id":279,"j":"ほしい","e":"to want (thing)","k":true},{"id":280,"j":"たい","e":"to want to do","k":true},{"id":281,"j":"できる","e":"can/able to do","k":true},{"id":282,"j":"みえる","e":"can see","k":true},{"id":283,"j":"きこえる","e":"can hear","k":true},{"id":284,"j":"なに/なん","e":"what","k":true},{"id":285,"j":"だれ","e":"who","k":true},{"id":286,"j":"どこ","e":"where","k":true},{"id":287,"j":"いつ","e":"when","k":true},{"id":288,"j":"なぜ/どうして","e":"why","k":true},{"id":289,"j":"どう","e":"how","k":true},{"id":290,"j":"どれ","e":"which one","k":true},{"id":291,"j":"どんな","e":"what kind","k":true},{"id":292,"j":"いくら","e":"how much","k":true},{"id":293,"j":"いくつ","e":"how many","k":true},{"id":294,"j":"どのくらい","e":"how long/how much","k":true},{"id":295,"j":"てんき","e":"weather","k":true},{"id":296,"j":"そら","e":"sky","k":true},{"id":297,"j":"つき","e":"moon","k":true},{"id":298,"j":"ほし","e":"star","k":true},{"id":299,"j":"たいよう","e":"sun","k":true},{"id":300,"j":"あめ","e":"rain","k":true},{"id":301,"j":"ゆき","e":"snow","k":true},{"id":302,"j":"かぜ","e":"wind","k":true},{"id":303,"j":"くもり","e":"cloudy","k":true},{"id":304,"j":"はれ","e":"sunny","k":true},{"id":305,"j":"き","e":"tree","k":true},{"id":306,"j":"はな","e":"flower","k":true},{"id":307,"j":"くさ","e":"grass","k":true},{"id":308,"j":"いぬ","e":"dog","k":true},{"id":309,"j":"ねこ","e":"cat","k":true},{"id":310,"j":"とり","e":"bird","k":true},{"id":311,"j":"さかな","e":"fish","k":true},{"id":312,"j":"むし","e":"insect/bug","k":true},{"id":313,"j":"もの","e":"thing/object","k":true},{"id":314,"j":"ほん","e":"book","k":true},{"id":315,"j":"ざっし","e":"magazine","k":true},{"id":316,"j":"しんぶん","e":"newspaper","k":true},{"id":317,"j":"ペン","e":"pen","k":true},{"id":318,"j":"えんぴつ","e":"pencil","k":true},{"id":319,"j":"かみ","e":"paper","k":true},{"id":320,"j":"かばん","e":"bag","k":true},{"id":321,"j":"さいふ","e":"wallet","k":false},{"id":322,"j":"かぎ","e":"key","k":true},{"id":323,"j":"でんわ","e":"telephone","k":true},{"id":324,"j":"スマホ","e":"smartphone","k":true},{"id":325,"j":"パソコン","e":"computer","k":true},{"id":326,"j":"テレビ","e":"television","k":true},{"id":327,"j":"ラジオ","e":"radio","k":true},{"id":328,"j":"カメラ","e":"camera","k":true},{"id":329,"j":"とけい","e":"clock/watch","k":true},{"id":330,"j":"めがね","e":"glasses","k":true},{"id":331,"j":"くつ","e":"shoes","k":true},{"id":332,"j":"ふく","e":"clothes","k":true},{"id":333,"j":"シャツ","e":"shirt","k":true},{"id":334,"j":"ズボン","e":"pants/trousers","k":true},{"id":335,"j":"スカート","e":"skirt","k":true},{"id":336,"j":"コート","e":"coat","k":true},{"id":337,"j":"ぼうし","e":"hat","k":true},{"id":338,"j":"つくえ","e":"desk","k":false},{"id":339,"j":"いす","e":"chair","k":true},{"id":340,"j":"まど","e":"window","k":true},{"id":341,"j":"ドア","e":"door","k":true},{"id":342,"j":"かいだん","e":"stairs","k":true},{"id":343,"j":"でんき","e":"electricity/light","k":true},{"id":344,"j":"エアコン","e":"air conditioner","k":true},{"id":345,"j":"れいぞうこ","e":"refrigerator","k":true},{"id":346,"j":"すこし","e":"a little","k":true},{"id":347,"j":"たくさん","e":"a lot/many","k":true},{"id":348,"j":"ぜんぶ","e":"all/everything","k":true},{"id":349,"j":"なにも","e":"nothing","k":false},{"id":350,"j":"だれも","e":"nobody","k":false},{"id":351,"j":"どこも","e":"nowhere","k":false},{"id":352,"j":"みぎ","e":"right","k":true},{"id":353,"j":"ひだり","e":"left","k":true},{"id":354,"j":"まえ","e":"front/before","k":true},{"id":355,"j":"うしろ","e":"back/behind","k":true},{"id":356,"j":"うえ","e":"up/above","k":true},{"id":357,"j":"した","e":"down/below","k":true},{"id":358,"j":"なか","e":"inside/middle","k":true},{"id":359,"j":"そと","e":"outside","k":true},{"id":360,"j":"となり","e":"next to","k":true},{"id":361,"j":"ちかく","e":"nearby","k":true},{"id":362,"j":"とおい","e":"far","k":true},{"id":363,"j":"ちかい","e":"near/close","k":true},{"id":364,"j":"ひがし","e":"east","k":true},{"id":365,"j":"にし","e":"west","k":true},{"id":366,"j":"みなみ","e":"south","k":true},{"id":367,"j":"きた","e":"north","k":true},{"id":368,"j":"でも","e":"but/however","k":true},{"id":369,"j":"そして","e":"and then","k":true},{"id":370,"j":"または","e":"or","k":false},{"id":371,"j":"もし","e":"if","k":true},{"id":372,"j":"から","e":"because/from","k":true},{"id":373,"j":"ので","e":"because","k":false},{"id":374,"j":"けど","e":"but","k":true},{"id":375,"j":"のに","e":"even though","k":false},{"id":376,"j":"ために","e":"for/in order to","k":true},{"id":377,"j":"ながら","e":"while doing","k":false},{"id":378,"j":"まで","e":"until/up to","k":true},{"id":379,"j":"もう","e":"already/anymore","k":true},{"id":380,"j":"まだ","e":"still/not yet","k":true},{"id":381,"j":"また","e":"again","k":true},{"id":382,"j":"いつも","e":"always","k":true},{"id":383,"j":"ときどき","e":"sometimes","k":true},{"id":384,"j":"たまに","e":"occasionally","k":false},{"id":385,"j":"ぜんぜん","e":"not at all","k":true},{"id":386,"j":"とても","e":"very","k":true},{"id":387,"j":"すごく","e":"very/extremely","k":true},{"id":388,"j":"ちょっと","e":"a little/just a moment","k":true},{"id":389,"j":"もっと","e":"more","k":true},{"id":390,"j":"いちばん","e":"most/number one","k":true},{"id":391,"j":"だいたい","e":"approximately/generally","k":true},{"id":392,"j":"はやく","e":"quickly/early","k":true},{"id":393,"j":"ゆっくり","e":"slowly/leisurely","k":true},{"id":394,"j":"いっしょに","e":"together","k":true},{"id":395,"j":"ひとりで","e":"alone/by oneself","k":true},{"id":396,"j":"はじめて","e":"for the first time","k":true},{"id":397,"j":"おかね","e":"money","k":true},{"id":398,"j":"ねだん","e":"price","k":false},{"id":399,"j":"やすい","e":"cheap","k":true},{"id":400,"j":"たかい","e":"expensive","k":true},{"id":401,"j":"はらう","e":"to pay","k":false},{"id":402,"j":"かえる","e":"to exchange/change","k":true},{"id":403,"j":"りょうしゅうしょ","e":"receipt","k":false},{"id":404,"j":"おんど","e":"temperature","k":false},{"id":405,"j":"しつど","e":"humidity","k":false},{"id":406,"j":"きおん","e":"air temperature","k":false},{"id":407,"j":"ことば","e":"word/language","k":true},{"id":408,"j":"にほんご","e":"Japanese language","k":true},{"id":409,"j":"えいご","e":"English language","k":true},{"id":410,"j":"なまえ","e":"name","k":true},{"id":411,"j":"じゅうしょ","e":"address","k":true},{"id":412,"j":"でんわばんごう","e":"phone number","k":true},{"id":413,"j":"しつもん","e":"question","k":true},{"id":414,"j":"こたえ","e":"answer","k":false},{"id":415,"j":"もんだい","e":"problem/question","k":true},{"id":416,"j":"けいかく","e":"plan","k":false},{"id":417,"j":"よてい","e":"schedule/plan","k":false},{"id":418,"j":"じゅんび","e":"preparation","k":true},{"id":419,"j":"せいかつ","e":"life/living","k":false},{"id":420,"j":"しゃかい","e":"society","k":false},{"id":421,"j":"せかい","e":"world","k":true},{"id":422,"j":"にほん","e":"Japan","k":true},{"id":423,"j":"アメリカ","e":"America/USA","k":true},{"id":424,"j":"ちゅうごく","e":"China","k":true},{"id":425,"j":"かんこく","e":"Korea","k":true},{"id":426,"j":"のる","e":"to ride/board","k":true},{"id":427,"j":"おりる","e":"to get off","k":false},{"id":428,"j":"はいる","e":"to enter","k":true},{"id":429,"j":"でる","e":"to exit/leave","k":false},{"id":430,"j":"とまる","e":"to stop/stay","k":true},{"id":431,"j":"うごく","e":"to move","k":true},{"id":432,"j":"おす","e":"to push","k":true},{"id":433,"j":"ひく","e":"to pull","k":false},{"id":434,"j":"なげる","e":"to throw","k":true},{"id":435,"j":"うける","e":"to receive/catch","k":true},{"id":436,"j":"おとす","e":"to drop","k":false},{"id":437,"j":"ひろう","e":"to pick up","k":false},{"id":438,"j":"きる","e":"to cut","k":true},{"id":439,"j":"やぶる","e":"to tear","k":false},{"id":440,"j":"つくる","e":"to make/create","k":true},{"id":441,"j":"なおす","e":"to fix/correct","k":true},{"id":442,"j":"こわす","e":"to break/destroy","k":true},{"id":443,"j":"あらう","e":"to wash","k":true},{"id":444,"j":"ふく","e":"to wipe","k":false},{"id":445,"j":"かざる","e":"to decorate","k":true},{"id":446,"j":"わける","e":"to divide","k":false},{"id":447,"j":"まぜる","e":"to mix","k":false},{"id":448,"j":"ならべる","e":"to arrange","k":false},{"id":449,"j":"かたづける","e":"to tidy up","k":false},{"id":450,"j":"すてる","e":"to throw away","k":false},{"id":451,"j":"ためる","e":"to save/accumulate","k":false},{"id":452,"j":"かせぐ","e":"to earn","k":false},{"id":453,"j":"つかれる","e":"to get tired","k":true},{"id":454,"j":"やすむ","e":"to rest","k":true},{"id":455,"j":"ねむる","e":"to sleep","k":true},{"id":456,"j":"さがす","e":"to search for","k":true},{"id":457,"j":"みつける","e":"to find","k":true},{"id":458,"j":"えらぶ","e":"to choose","k":false},{"id":459,"j":"ふえる","e":"to increase","k":false},{"id":460,"j":"へる","e":"to decrease","k":false},{"id":461,"j":"かんじる","e":"to feel/sense","k":true},{"id":462,"j":"いたむ","e":"to hurt/ache","k":true},{"id":463,"j":"なおる","e":"to recover","k":false},{"id":464,"j":"ふとる","e":"to gain weight","k":false},{"id":465,"j":"やせる","e":"to lose weight","k":false},{"id":466,"j":"けんかする","e":"to fight/quarrel","k":false},{"id":467,"j":"そうだんする","e":"to consult","k":false},{"id":468,"j":"せつめいする","e":"to explain","k":true},{"id":469,"j":"しょうかいする","e":"to introduce","k":false},{"id":470,"j":"さんかする","e":"to participate","k":false},{"id":471,"j":"しゅっせきする","e":"to attend","k":false},{"id":472,"j":"けっせきする","e":"to be absent","k":false},{"id":473,"j":"ちこくする","e":"to be late","k":false},{"id":474,"j":"そつぎょうする","e":"to graduate","k":false},{"id":475,"j":"にゅうがくする","e":"to enroll","k":false},{"id":476,"j":"れんらくする","e":"to contact","k":true},{"id":477,"j":"かくにんする","e":"to confirm","k":false},{"id":478,"j":"ほうこくする","e":"to report","k":false},{"id":479,"j":"むかう","e":"to head toward","k":false},{"id":480,"j":"もどる","e":"to return/go back","k":false},{"id":481,"j":"のぼる","e":"to climb/go up","k":true},{"id":482,"j":"くだる","e":"to descend","k":false},{"id":483,"j":"わたる","e":"to cross","k":false},{"id":484,"j":"とおる","e":"to pass through","k":false},{"id":485,"j":"まがる","e":"to turn","k":true},{"id":486,"j":"こえる","e":"to cross/exceed","k":false},{"id":487,"j":"きもち","e":"feeling/mood","k":true},{"id":488,"j":"かんじょう","e":"emotion","k":false},{"id":489,"j":"きぼう","e":"hope/wish","k":false},{"id":490,"j":"ゆめ","e":"dream","k":true},{"id":491,"j":"もくひょう","e":"goal/target","k":false},{"id":492,"j":"もくてき","e":"purpose/objective","k":true},{"id":493,"j":"りゆう","e":"reason","k":true},{"id":494,"j":"けっか","e":"result","k":false},{"id":495,"j":"えいきょう","e":"influence/effect","k":false},{"id":496,"j":"へんか","e":"change","k":false},{"id":497,"j":"ちがい","e":"difference","k":true},{"id":498,"j":"かんけい","e":"relationship","k":false},{"id":499,"j":"しんらい","e":"trust","k":true},{"id":500,"j":"そんけい","e":"respect","k":false},{"id":501,"j":"あいじょう","e":"affection/love","k":true},{"id":502,"j":"きょうみ","e":"interest/curiosity","k":true},{"id":503,"j":"けいけん","e":"experience","k":false},{"id":504,"j":"きおく","e":"memory","k":false},{"id":505,"j":"ちしき","e":"knowledge","k":false},{"id":506,"j":"じょうほう","e":"information","k":true},{"id":507,"j":"じじつ","e":"fact","k":false},{"id":508,"j":"しんじつ","e":"truth","k":true},{"id":509,"j":"うそ","e":"lie","k":true},{"id":510,"j":"ひみつ","e":"secret","k":true},{"id":511,"j":"かいけつ","e":"solution","k":false},{"id":512,"j":"しっぱい","e":"failure","k":false},{"id":513,"j":"せいこう","e":"success","k":true},{"id":514,"j":"むだ","e":"waste","k":false},{"id":515,"j":"へや","e":"room","k":true},{"id":516,"j":"だいどころ","e":"kitchen","k":true},{"id":517,"j":"おふろ","e":"bath","k":true},{"id":518,"j":"トイレ","e":"toilet","k":true},{"id":519,"j":"げんかん","e":"entrance hall","k":true},{"id":520,"j":"にわ","e":"garden","k":true},{"id":521,"j":"やね","e":"roof","k":true},{"id":522,"j":"かべ","e":"wall","k":true},{"id":523,"j":"ゆか","e":"floor","k":true},{"id":524,"j":"てんじょう","e":"ceiling","k":true},{"id":525,"j":"ベランダ","e":"balcony","k":true},{"id":526,"j":"そうこ","e":"storage/warehouse","k":false},{"id":527,"j":"しゃこ","e":"garage","k":false},{"id":528,"j":"エレベーター","e":"elevator","k":true},{"id":529,"j":"エスカレーター","e":"escalator","k":true},{"id":530,"j":"きょうしつ","e":"classroom","k":false},{"id":531,"j":"たいいくかん","e":"gymnasium","k":false},{"id":532,"j":"しょくどう","e":"cafeteria","k":true},{"id":533,"j":"じゅぎょう","e":"class/lesson","k":false},{"id":534,"j":"こうぎ","e":"lecture","k":false},{"id":535,"j":"しゅくだい","e":"homework","k":true},{"id":536,"j":"テスト","e":"test","k":true},{"id":537,"j":"しけん","e":"exam","k":false},{"id":538,"j":"せいせき","e":"grades","k":false},{"id":539,"j":"ごうかく","e":"passing/acceptance","k":false},{"id":540,"j":"ふごうかく","e":"failure/rejection","k":false},{"id":541,"j":"そつぎょうしき","e":"graduation ceremony","k":false},{"id":542,"j":"きょうかしょ","e":"textbook","k":false},{"id":543,"j":"ノート","e":"notebook","k":true},{"id":544,"j":"じしょ","e":"dictionary","k":false},{"id":545,"j":"けいさんき","e":"calculator","k":false},{"id":546,"j":"はさみ","e":"scissors","k":true},{"id":547,"j":"のり","e":"glue","k":true},{"id":548,"j":"ホチキス","e":"stapler","k":false},{"id":549,"j":"かいしゃ","e":"company","k":true},{"id":550,"j":"じむしょ","e":"office","k":false},{"id":551,"j":"こうじょう","e":"factory","k":false},{"id":552,"j":"しょうがっこう","e":"elementary school","k":false},{"id":553,"j":"ちゅうがっこう","e":"middle school","k":true},{"id":554,"j":"こうとうがっこう","e":"high school","k":false},{"id":555,"j":"だいがく","e":"university","k":true},{"id":556,"j":"だいがくいん","e":"graduate school","k":false},{"id":557,"j":"しゃちょう","e":"company president","k":true},{"id":558,"j":"ぶちょう","e":"department head","k":false},{"id":559,"j":"かちょう","e":"section chief","k":false},{"id":560,"j":"どうりょう","e":"colleague","k":false},{"id":561,"j":"じょうし","e":"boss/superior","k":false},{"id":562,"j":"ぶか","e":"subordinate","k":false},{"id":563,"j":"きゃく","e":"customer/guest","k":false},{"id":564,"j":"きゅうりょう","e":"salary","k":false},{"id":565,"j":"ボーナス","e":"bonus","k":true},{"id":566,"j":"ざんぎょう","e":"overtime","k":false},{"id":567,"j":"きゅうか","e":"vacation/day off","k":false},{"id":568,"j":"たいしょく","e":"retirement","k":false},{"id":569,"j":"めんせつ","e":"interview","k":false},{"id":570,"j":"さいよう","e":"hiring","k":false},{"id":571,"j":"アルバイト","e":"part-time job","k":true},{"id":572,"j":"ボランティア","e":"volunteer","k":true},{"id":573,"j":"パート","e":"part-time work","k":false},{"id":574,"j":"けが","e":"injury","k":false},{"id":575,"j":"びょうき","e":"illness","k":false},{"id":576,"j":"ねつ","e":"fever","k":false},{"id":577,"j":"せき","e":"cough","k":false},{"id":578,"j":"はなみず","e":"runny nose","k":true},{"id":579,"j":"のどいた","e":"sore throat","k":true},{"id":580,"j":"ずつう","e":"headache","k":false},{"id":581,"j":"おなかいた","e":"stomachache","k":true},{"id":582,"j":"めまい","e":"dizziness","k":false},{"id":583,"j":"くすり","e":"medicine","k":true},{"id":584,"j":"しんさつ","e":"medical examination","k":false},{"id":585,"j":"けつあつ","e":"blood pressure","k":false},{"id":586,"j":"たいおん","e":"body temperature","k":false},{"id":587,"j":"アレルギー","e":"allergy","k":true},{"id":588,"j":"にゅういん","e":"hospitalization","k":false},{"id":589,"j":"たいいん","e":"discharge from hospital","k":false},{"id":590,"j":"しゅじゅつ","e":"surgery","k":false},{"id":591,"j":"ちりょう","e":"medical treatment","k":false},{"id":592,"j":"かいふく","e":"recovery","k":false},{"id":593,"j":"リハビリ","e":"rehabilitation","k":false},{"id":594,"j":"しぜん","e":"nature","k":true},{"id":595,"j":"かんきょう","e":"environment","k":false},{"id":596,"j":"きこう","e":"climate","k":false},{"id":597,"j":"きせつ","e":"season","k":false},{"id":598,"j":"はる","e":"spring","k":true},{"id":599,"j":"なつ","e":"summer","k":true},{"id":600,"j":"あき","e":"autumn/fall","k":false},{"id":601,"j":"ふゆ","e":"winter","k":true},{"id":602,"j":"たいふう","e":"typhoon","k":true},{"id":603,"j":"じしん","e":"earthquake","k":true},{"id":604,"j":"つなみ","e":"tsunami","k":true},{"id":605,"j":"こうずい","e":"flood","k":false},{"id":606,"j":"かじ","e":"fire disaster","k":false},{"id":607,"j":"かざん","e":"volcano","k":false},{"id":608,"j":"みずうみ","e":"lake","k":true},{"id":609,"j":"ひかり","e":"light","k":true},{"id":610,"j":"かげ","e":"shadow","k":true},{"id":611,"j":"おと","e":"sound","k":true},{"id":612,"j":"どうぶつ","e":"animal","k":true},{"id":613,"j":"しょくぶつ","e":"plant","k":false},{"id":614,"j":"こんちゅう","e":"insect","k":false},{"id":615,"j":"ほにゅうるい","e":"mammal","k":false},{"id":616,"j":"もり","e":"forest","k":true},{"id":617,"j":"はやし","e":"woods/grove","k":false},{"id":618,"j":"のはら","e":"field/meadow","k":false},{"id":619,"j":"さばく","e":"desert","k":false},{"id":620,"j":"しま","e":"island","k":true},{"id":621,"j":"はんとう","e":"peninsula","k":false},{"id":622,"j":"がけ","e":"cliff","k":false},{"id":623,"j":"どうくつ","e":"cave","k":false},{"id":624,"j":"ちょうしょく","e":"breakfast","k":false},{"id":625,"j":"ちゅうしょく","e":"lunch","k":false},{"id":626,"j":"ゆうしょく","e":"dinner","k":true},{"id":627,"j":"おやつ","e":"snack","k":false},{"id":628,"j":"デザート","e":"dessert","k":true},{"id":629,"j":"スープ","e":"soup","k":true},{"id":630,"j":"サラダ","e":"salad","k":true},{"id":631,"j":"サンドイッチ","e":"sandwich","k":true},{"id":632,"j":"ハンバーガー","e":"hamburger","k":true},{"id":633,"j":"ピザ","e":"pizza","k":true},{"id":634,"j":"パスタ","e":"pasta","k":true},{"id":635,"j":"ステーキ","e":"steak","k":true},{"id":636,"j":"とうふ","e":"tofu","k":true},{"id":637,"j":"みそ","e":"miso","k":true},{"id":638,"j":"だし","e":"dashi broth","k":true},{"id":639,"j":"つゆ","e":"dipping sauce","k":false},{"id":640,"j":"たれ","e":"sauce/dressing","k":false},{"id":641,"j":"マヨネーズ","e":"mayonnaise","k":true},{"id":642,"j":"ケチャップ","e":"ketchup","k":true},{"id":643,"j":"わさび","e":"wasabi","k":true},{"id":644,"j":"なっとう","e":"natto","k":true},{"id":645,"j":"つけもの","e":"pickles","k":false},{"id":646,"j":"せんべい","e":"rice cracker","k":true},{"id":647,"j":"アイスクリーム","e":"ice cream","k":true},{"id":648,"j":"ケーキ","e":"cake","k":true},{"id":649,"j":"クッキー","e":"cookie","k":true},{"id":650,"j":"チョコレート","e":"chocolate","k":true},{"id":651,"j":"ようふく","e":"western clothing","k":false},{"id":652,"j":"わふく","e":"Japanese clothing","k":false},{"id":653,"j":"きもの","e":"kimono","k":true},{"id":654,"j":"ゆかた","e":"casual summer kimono","k":true},{"id":655,"j":"したぎ","e":"underwear","k":false},{"id":656,"j":"くつした","e":"socks","k":true},{"id":657,"j":"てぶくろ","e":"gloves","k":true},{"id":658,"j":"マフラー","e":"scarf","k":true},{"id":659,"j":"かさ","e":"umbrella","k":true},{"id":660,"j":"にもつ","e":"luggage/baggage","k":false},{"id":661,"j":"リュック","e":"backpack","k":false},{"id":662,"j":"ハンドバッグ","e":"handbag","k":true},{"id":663,"j":"ファスナー","e":"zipper","k":false},{"id":664,"j":"ボタン","e":"button","k":true},{"id":665,"j":"しちゃく","e":"trying on clothes","k":false},{"id":666,"j":"わりびき","e":"discount","k":false},{"id":667,"j":"セール","e":"sale","k":true},{"id":668,"j":"てんいん","e":"store clerk","k":false},{"id":669,"j":"レジ","e":"cash register","k":false},{"id":670,"j":"レシート","e":"receipt","k":true},{"id":671,"j":"クレジットカード","e":"credit card","k":true},{"id":672,"j":"げんきん","e":"cash","k":false},{"id":673,"j":"インターネット","e":"internet","k":true},{"id":674,"j":"ウェブサイト","e":"website","k":true},{"id":675,"j":"メール","e":"email","k":true},{"id":676,"j":"SNS","e":"social media","k":false},{"id":677,"j":"アプリ","e":"app","k":true},{"id":678,"j":"ダウンロード","e":"download","k":true},{"id":679,"j":"アップロード","e":"upload","k":true},{"id":680,"j":"パスワード","e":"password","k":true},{"id":681,"j":"ログイン","e":"login","k":true},{"id":682,"j":"ログアウト","e":"logout","k":true},{"id":683,"j":"クラウド","e":"cloud","k":true},{"id":684,"j":"バックアップ","e":"backup","k":true},{"id":685,"j":"アップデート","e":"update","k":true},{"id":686,"j":"エラー","e":"error","k":true},{"id":687,"j":"でんち","e":"battery","k":true},{"id":688,"j":"じゅうでん","e":"charging","k":false},{"id":689,"j":"かんこう","e":"sightseeing","k":false},{"id":690,"j":"がいこく","e":"foreign country","k":false},{"id":691,"j":"パスポート","e":"passport","k":true},{"id":692,"j":"ビザ","e":"visa","k":true},{"id":693,"j":"よやく","e":"reservation/booking","k":true},{"id":694,"j":"キャンセル","e":"cancellation","k":true},{"id":695,"j":"ガイド","e":"guide","k":true},{"id":696,"j":"ちず","e":"map","k":true},{"id":697,"j":"みやげ","e":"souvenir","k":true},{"id":698,"j":"さんぽ","e":"walk/stroll","k":true},{"id":699,"j":"ハイキング","e":"hiking","k":true},{"id":700,"j":"キャンプ","e":"camping","k":true},{"id":701,"j":"つり","e":"fishing","k":false},{"id":702,"j":"スキー","e":"skiing","k":true},{"id":703,"j":"サーフィン","e":"surfing","k":true},{"id":704,"j":"スノーボード","e":"snowboarding","k":true},{"id":705,"j":"しあい","e":"match/game","k":false},{"id":706,"j":"たいかい","e":"tournament/competition","k":false},{"id":707,"j":"チーム","e":"team","k":true},{"id":708,"j":"せんしゅ","e":"athlete/player","k":false},{"id":709,"j":"コーチ","e":"coach","k":true},{"id":710,"j":"しんぱん","e":"referee","k":false},{"id":711,"j":"サッカー","e":"soccer","k":true},{"id":712,"j":"やきゅう","e":"baseball","k":false},{"id":713,"j":"バスケットボール","e":"basketball","k":true},{"id":714,"j":"テニス","e":"tennis","k":true},{"id":715,"j":"バレーボール","e":"volleyball","k":true},{"id":716,"j":"ラグビー","e":"rugby","k":true},{"id":717,"j":"じゅうどう","e":"judo","k":true},{"id":718,"j":"からて","e":"karate","k":true},{"id":719,"j":"けんどう","e":"kendo","k":true},{"id":720,"j":"すもう","e":"sumo","k":true},{"id":721,"j":"ヨガ","e":"yoga","k":true},{"id":722,"j":"ダンス","e":"dance","k":true},{"id":723,"j":"バレエ","e":"ballet","k":true},{"id":724,"j":"えいが","e":"movie","k":true},{"id":725,"j":"えんげき","e":"theater/drama","k":false},{"id":726,"j":"コンサート","e":"concert","k":true},{"id":727,"j":"どくしょ","e":"reading","k":false},{"id":728,"j":"ガーデニング","e":"gardening","k":true},{"id":729,"j":"ゲーム","e":"game","k":true},{"id":730,"j":"しゃしんをとる","e":"to take photos","k":true},{"id":731,"j":"せいかく","e":"personality/character","k":false},{"id":732,"j":"まじめ","e":"serious/diligent","k":true},{"id":733,"j":"なまけもの","e":"lazy person","k":false},{"id":734,"j":"あかるい","e":"cheerful/bright","k":false},{"id":735,"j":"くらい","e":"gloomy/dark","k":false},{"id":736,"j":"にぎやか","e":"lively/noisy","k":false},{"id":737,"j":"いらいら","e":"irritated/frustrated","k":false},{"id":738,"j":"どきどき","e":"nervous/excited heartbeat","k":true},{"id":739,"j":"わくわく","e":"excited/thrilled","k":false},{"id":740,"j":"のんびり","e":"carefree/relaxed","k":true},{"id":741,"j":"びっくり","e":"surprised","k":true},{"id":742,"j":"がっかり","e":"disappointed","k":false},{"id":743,"j":"あんしん","e":"relief/reassurance","k":false},{"id":744,"j":"いじわる","e":"mean/spiteful","k":false},{"id":745,"j":"なかよし","e":"good friends","k":false},{"id":746,"j":"せいじ","e":"politics","k":false},{"id":747,"j":"けいざい","e":"economy","k":false},{"id":748,"j":"ぶんか","e":"culture","k":true},{"id":749,"j":"れきし","e":"history","k":false},{"id":750,"j":"でんとう","e":"tradition","k":false},{"id":751,"j":"しゅうきょう","e":"religion","k":false},{"id":752,"j":"ほうりつ","e":"law","k":false},{"id":753,"j":"けいさつ","e":"police","k":false},{"id":754,"j":"きゅうきゅうしゃ","e":"ambulance","k":false},{"id":755,"j":"しょうぼうしゃ","e":"fire truck","k":false},{"id":756,"j":"じけん","e":"incident/case","k":false},{"id":757,"j":"じこ","e":"accident","k":false},{"id":758,"j":"ほけん","e":"insurance","k":false},{"id":759,"j":"ぜいきん","e":"tax","k":false},{"id":760,"j":"せいふ","e":"government","k":false},{"id":761,"j":"せんきょ","e":"election","k":false},{"id":762,"j":"とうひょう","e":"voting","k":false},{"id":763,"j":"かたち","e":"shape/form","k":false},{"id":764,"j":"おおきさ","e":"size","k":false},{"id":765,"j":"おもさ","e":"weight","k":false},{"id":766,"j":"たかさ","e":"height","k":true},{"id":767,"j":"はば","e":"width","k":false},{"id":768,"j":"ふかさ","e":"depth","k":false},{"id":769,"j":"めんせき","e":"area","k":false},{"id":770,"j":"すうりょう","e":"quantity/amount","k":false},{"id":771,"j":"ひんしつ","e":"quality","k":false},{"id":772,"j":"かち","e":"value/worth","k":false},{"id":773,"j":"かかく","e":"price/cost","k":false},{"id":774,"j":"むりょう","e":"free of charge","k":false},{"id":775,"j":"ゆうりょう","e":"paid/for a fee","k":false},{"id":776,"j":"ていねい","e":"polite/careful","k":false},{"id":777,"j":"らんぼう","e":"rough/rude","k":false},{"id":778,"j":"じゅうぶん","e":"sufficient/enough","k":false},{"id":779,"j":"てきとう","e":"suitable/appropriate","k":false},{"id":780,"j":"むり","e":"impossible/unreasonable","k":true},{"id":781,"j":"あきらか","e":"clear/obvious","k":false},{"id":782,"j":"あいまい","e":"vague/ambiguous","k":false},{"id":783,"j":"たいせつ","e":"important/precious","k":true},{"id":784,"j":"だいじ","e":"important/valuable","k":true},{"id":785,"j":"ひつよう","e":"necessary","k":false},{"id":786,"j":"よけい","e":"unnecessary/extra","k":false},{"id":787,"j":"あんぜん","e":"safe","k":true},{"id":788,"j":"きけん","e":"dangerous","k":false},{"id":789,"j":"べんり","e":"convenient","k":true},{"id":790,"j":"ふべん","e":"inconvenient","k":true},{"id":791,"j":"しんせん","e":"fresh","k":true},{"id":792,"j":"かんたん","e":"simple/easy","k":true},{"id":793,"j":"ふくざつ","e":"complicated","k":false},{"id":794,"j":"しばらく","e":"for a while","k":false},{"id":795,"j":"すぐ","e":"immediately/soon","k":true},{"id":796,"j":"やがて","e":"eventually","k":false},{"id":797,"j":"とつぜん","e":"suddenly","k":false},{"id":798,"j":"きゅうに","e":"suddenly/quickly","k":false},{"id":799,"j":"だんだん","e":"gradually","k":false},{"id":800,"j":"ますます","e":"more and more","k":false},{"id":801,"j":"いちど","e":"once","k":true},{"id":802,"j":"なんども","e":"many times","k":true},{"id":803,"j":"さいご","e":"last/final","k":true},{"id":804,"j":"さいしょ","e":"first/beginning","k":true},{"id":805,"j":"さいきん","e":"recently","k":true},{"id":806,"j":"むかし","e":"long ago","k":false},{"id":807,"j":"しょうらい","e":"future","k":false},{"id":808,"j":"かこ","e":"past","k":true},{"id":809,"j":"げんざい","e":"present/current","k":false},{"id":810,"j":"せいひん","e":"product","k":false},{"id":811,"j":"しょうひん","e":"merchandise/goods","k":false},{"id":812,"j":"ざいりょう","e":"material/ingredient","k":false},{"id":813,"j":"どうぐ","e":"tool/implement","k":false},{"id":814,"j":"きかい","e":"machine/opportunity","k":false},{"id":815,"j":"そうち","e":"device/apparatus","k":false},{"id":816,"j":"システム","e":"system","k":false},{"id":817,"j":"サービス","e":"service","k":false},{"id":818,"j":"サポート","e":"support","k":false},{"id":819,"j":"しょるい","e":"documents/paperwork","k":false},{"id":820,"j":"もうしこみ","e":"application/request","k":false},{"id":821,"j":"てつづき","e":"procedure/formality","k":false},{"id":822,"j":"きまり","e":"rule/regulation","k":false},{"id":823,"j":"じゅんばん","e":"order/turn","k":false},{"id":824,"j":"じゅうたい","e":"traffic jam","k":false},{"id":825,"j":"けんさ","e":"inspection/check","k":false},{"id":826,"j":"おつかれさま","e":"good work/thank you for your effort","k":true},{"id":827,"j":"ごくろうさま","e":"thank you for your hard work","k":false},{"id":828,"j":"よろしくおねがいします","e":"nice to meet you/please","k":true},{"id":829,"j":"おじゃまします","e":"excuse me for intruding","k":false},{"id":830,"j":"いただきます","e":"bon appétit/I humbly receive","k":true},{"id":831,"j":"ごちそうさまでした","e":"thank you for the meal","k":true},{"id":832,"j":"おさきにしつれいします","e":"excuse me for leaving first","k":true},{"id":833,"j":"きをつけて","e":"take care/be careful","k":true},{"id":834,"j":"によると","e":"according to","k":false},{"id":835,"j":"にもかかわらず","e":"despite/in spite of","k":false},{"id":836,"j":"おかげで","e":"thanks to","k":false},{"id":837,"j":"はずだ","e":"should be/expected to","k":false},{"id":838,"j":"らしい","e":"seems like/apparently","k":false},{"id":839,"j":"みたい","e":"seems like/looks like","k":true},{"id":840,"j":"かもしれない","e":"might/maybe","k":false},{"id":841,"j":"にちがいない","e":"must be/no doubt","k":false},{"id":842,"j":"さえ","e":"even/if only","k":false},{"id":843,"j":"ほど","e":"about/to the extent that","k":false},{"id":844,"j":"ようになる","e":"to come to do","k":false},{"id":845,"j":"ようにする","e":"to make sure to do","k":false},{"id":846,"j":"こうけつあつ","e":"high blood pressure","k":false},{"id":847,"j":"とうにょうびょう","e":"diabetes","k":false},{"id":848,"j":"ぜんそく","e":"asthma","k":false},{"id":849,"j":"かふんしょう","e":"hay fever","k":false},{"id":850,"j":"ふみん","e":"insomnia","k":false},{"id":851,"j":"うつ","e":"depression","k":false},{"id":852,"j":"ストレス","e":"stress","k":true},{"id":853,"j":"しょうじょう","e":"symptom","k":false},{"id":854,"j":"ちりょうほうほう","e":"treatment method","k":false},{"id":855,"j":"よぼう","e":"prevention","k":false},{"id":856,"j":"ちゅうしゃ","e":"injection","k":false},{"id":857,"j":"じょほう","e":"tablet/pill","k":false},{"id":858,"j":"カプセル","e":"capsule","k":false},{"id":859,"j":"めぐすり","e":"eye drops","k":false},{"id":860,"j":"にる","e":"to boil/simmer","k":false},{"id":861,"j":"やく","e":"to grill/bake","k":true},{"id":862,"j":"いためる","e":"to stir-fry","k":false},{"id":863,"j":"あげる","e":"to deep-fry","k":false},{"id":864,"j":"むす","e":"to steam","k":false},{"id":865,"j":"きざむ","e":"to chop/mince","k":false},{"id":866,"j":"まぜる","e":"to mix/stir","k":false},{"id":867,"j":"はかる","e":"to measure","k":false},{"id":868,"j":"あじをみる","e":"to taste","k":true},{"id":869,"j":"れいとう","e":"frozen","k":false},{"id":870,"j":"れいぞう","e":"refrigerated","k":false},{"id":871,"j":"かんづめ","e":"canned food","k":false},{"id":872,"j":"しょくひん","e":"foodstuff/groceries","k":false},{"id":873,"j":"しょくざい","e":"ingredients","k":false},{"id":874,"j":"さいていきおん","e":"minimum temperature","k":false},{"id":875,"j":"さいこうきおん","e":"maximum temperature","k":false},{"id":876,"j":"こうすいかくりつ","e":"precipitation probability","k":false},{"id":877,"j":"にわかあめ","e":"sudden shower","k":false},{"id":878,"j":"あられ","e":"hail/sleet","k":false},{"id":879,"j":"きり","e":"fog","k":false},{"id":880,"j":"もや","e":"mist/haze","k":false},{"id":881,"j":"なだれ","e":"avalanche","k":false},{"id":882,"j":"こうずい","e":"flood","k":false},{"id":883,"j":"かんそう","e":"dry/dryness","k":false}];
+
+// ═══════════════════════════════════════
+// STATE & STORAGE
+// ═══════════════════════════════════════
+const STORAGE_KEY = 'vocab_srs_v1';
+const TODAY = new Date().toISOString().slice(0,10);
+
+// SRS intervals in days per level
+const SRS_INTERVALS = [0, 0, 1, 3, 7, 14];
+
+let state = loadState();
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch(e) {}
+  // First load — initialise from spreadsheet Y/N data
+  const cards = {};
+  WORDS.forEach(w => {
+    cards[w.id] = {
+      srs: w.k ? 5 : 0,          // known=5, unknown=0
+      nextReview: w.k ? null : TODAY,  // known words don't need review; unknowns start today
+      reviews: 0
+    };
+  });
+  return { cards, sessions: 0, lastSession: null };
+}
+
+function saveState() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+function getCard(id) { return state.cards[id]; }
+
+function isDue(id) {
+  const c = getCard(id);
+  if (!c) return false;
+  if (c.srs === 0) return true;
+  if (!c.nextReview) return false;
+  return c.nextReview <= TODAY;
+}
+
+function applyRating(id, rating) {
+  const c = getCard(id);
+  c.srs = rating;
+  c.reviews = (c.reviews || 0) + 1;
+  const days = SRS_INTERVALS[rating] || 0;
+  if (days === 0) {
+    c.nextReview = TODAY;
+  } else {
+    const d = new Date();
+    d.setDate(d.getDate() + days);
+    c.nextReview = d.toISOString().slice(0,10);
+  }
+  saveState();
+}
+
+// ═══════════════════════════════════════
+// DECK BUILDERS
+// ═══════════════════════════════════════
+function getDeck(type) {
+  let pool;
+  if (type === 'due')    pool = WORDS.filter(w => isDue(w.id));
+  else if (type === 'unknown') pool = WORDS.filter(w => getCard(w.id).srs < 4);
+  else if (type === 'known')   pool = WORDS.filter(w => getCard(w.id).srs >= 4);
+  else if (type === 'weak')    pool = WORDS.filter(w => { const s = getCard(w.id).srs; return s >= 1 && s <= 2; });
+  else pool = [...WORDS];
+  return shuffle(pool);
+}
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length-1; i > 0; i--) {
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]] = [a[j],a[i]];
+  }
+  return a;
+}
+
+// ═══════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  document.querySelector(`.nav-tab[data-page="${name}"]`).classList.add('active');
+  if (name === 'home')   updateHome();
+  if (name === 'browse') renderBrowse();
+  if (name === 'stats')  updateStats();
+}
+
+document.querySelectorAll('.nav-tab').forEach(t => {
+  t.addEventListener('click', () => showPage(t.dataset.page));
+});
+
+function selectOpt(el, groupId) {
+  document.querySelectorAll(`#${groupId} .setup-opt`).forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+function getOptVal(groupId) {
+  const sel = document.querySelector(`#${groupId} .setup-opt.selected`);
+  return sel ? sel.dataset.val : null;
+}
+
+// ═══════════════════════════════════════
+// HOME
+// ═══════════════════════════════════════
+function updateHome() {
+  const total = WORDS.length;
+  const known = WORDS.filter(w => getCard(w.id).srs >= 4).length;
+  const due   = WORDS.filter(w => isDue(w.id)).length;
+  const pct   = Math.round(known/total*100);
+
+  document.getElementById('h-total').textContent = total;
+  document.getElementById('h-known').textContent = known;
+  document.getElementById('h-due').textContent   = due;
+  document.getElementById('h-pct').textContent   = pct + '%';
+  document.getElementById('h-bar').style.width   = pct + '%';
+
+  for (let s = 1; s <= 5; s++) {
+    const n = WORDS.filter(w => getCard(w.id).srs === s).length;
+    document.getElementById('srs'+s).textContent = n;
+  }
+  // SRS 0 shown as "New"
+  const n0 = WORDS.filter(w => getCard(w.id).srs === 0).length;
+  document.getElementById('srs1').textContent = n0; // repurpose srs1 display as "new"
+}
+
+// ═══════════════════════════════════════
+// FLASHCARDS
+// ═══════════════════════════════════════
+let fc = { deck:[], idx:0, dir:'mix', flipped:false, good:0, bad:0 };
+
+function startFlash(deckType) {
+  showPage('flash');
+  const setup = document.getElementById('fc-setup');
+  // pre-select the right deck option
+  const opts = document.querySelectorAll('#fc-deck-opts .setup-opt');
+  opts.forEach(o => o.classList.remove('selected'));
+  const match = document.querySelector(`#fc-deck-opts .setup-opt[data-val="${deckType}"]`);
+  if (match) match.classList.add('selected');
+  setup.style.display = 'flex';
+  document.getElementById('fc-active').style.display = 'none';
+  document.getElementById('fc-summary').style.display = 'none';
+}
+
+function startFlashFromSetup() {
+  const deckType = getOptVal('fc-deck-opts') || 'due';
+  const dir      = getOptVal('fc-dir-opts')  || 'mix';
+  const countVal = getOptVal('fc-count-opts') || '6';
+  let deck = getDeck(deckType);
+  if (countVal !== 'all') deck = deck.slice(0, parseInt(countVal));
+  if (deck.length === 0) { alert('No words in this deck right now!'); return; }
+
+  fc = { deck, idx:0, dir, flipped:false, good:0, bad:0 };
+
+  document.getElementById('fc-setup').style.display = 'none';
+  document.getElementById('fc-summary').style.display = 'none';
+  const active = document.getElementById('fc-active');
+  active.style.display = 'flex';
+
+  const badges = { mix:'Mix', jp:'JP → EN', en:'EN → JP' };
+  document.getElementById('fc-mode-badge').textContent = badges[dir] || dir;
+
+  showFcCard();
+}
+
+function startQuiz(deckType) {
+  showPage('quiz');
+  const opts = document.querySelectorAll('#qz-deck-opts .setup-opt');
+  opts.forEach(o => o.classList.remove('selected'));
+  const match = document.querySelector(`#qz-deck-opts .setup-opt[data-val="${deckType}"]`);
+  if (match) match.classList.add('selected');
+}
+
+function showFcCard() {
+  const card = fc.deck[fc.idx];
+  const total = fc.deck.length;
+  document.getElementById('fc-counter').textContent = (fc.idx+1) + ' / ' + total;
+  document.getElementById('fc-progress-fill').style.width = ((fc.idx+1)/total*100) + '%';
+
+  // Determine direction for this card
+  let showJp;
+  if (fc.dir === 'jp') showJp = true;
+  else if (fc.dir === 'en') showJp = false;
+  else showJp = Math.random() < 0.5;
+  fc.showJp = showJp;
+
+  const frontWord  = document.getElementById('fc-front-word');
+  const dirLabel   = document.getElementById('fc-dir-label');
+
+  if (showJp) {
+    frontWord.textContent = card.j;
+    frontWord.className = 'fc-word';
+    dirLabel.textContent = 'Japanese → English';
+  } else {
+    frontWord.textContent = card.e;
+    frontWord.className = 'fc-word en';
+    dirLabel.textContent = 'English → Japanese';
+  }
+
+  document.getElementById('fc-back-jp').textContent = card.j;
+  document.getElementById('fc-back-en').textContent = card.e;
+
+  // Reset flip
+  const wrap = document.getElementById('fc-card-wrap');
+  wrap.classList.remove('flipped');
+  fc.flipped = false;
+  document.getElementById('fc-ratings').classList.remove('visible');
+  document.getElementById('fc-skip-btn').style.display = 'block';
+}
+
+function flipCard() {
+  if (fc.flipped) return;
+  fc.flipped = true;
+  document.getElementById('fc-card-wrap').classList.add('flipped');
+  document.getElementById('fc-ratings').classList.add('visible');
+  document.getElementById('fc-skip-btn').style.display = 'none';
+}
+
+function rateCard(rating) {
+  const card = fc.deck[fc.idx];
+  applyRating(card.id, rating);
+  if (rating >= 4) fc.good++; else fc.bad++;
+  nextFcCard();
+}
+
+function skipCard() { nextFcCard(); }
+
+function nextFcCard() {
+  fc.idx++;
+  if (fc.idx >= fc.deck.length) {
+    showFcSummary();
+    return;
+  }
+  showFcCard();
+}
+
+function showFcSummary() {
+  state.sessions++;
+  state.lastSession = TODAY;
+  saveState();
+
+  document.getElementById('fc-active').style.display = 'none';
+  const sum = document.getElementById('fc-summary');
+  sum.style.display = 'flex';
+
+  const total = fc.deck.length;
+  const pct = Math.round(fc.good/total*100);
+  const emoji = pct >= 80 ? '🎉' : pct >= 50 ? '💪' : '📖';
+  document.getElementById('fc-sum-emoji').textContent = emoji;
+  document.getElementById('fc-sum-title').textContent = pct >= 80 ? 'Excellent work!' : pct >= 50 ? 'Good session!' : 'Keep going!';
+  document.getElementById('fc-sum-sub').textContent   = `Reviewed ${total} cards`;
+  document.getElementById('fc-sum-good').textContent  = fc.good;
+  document.getElementById('fc-sum-bad').textContent   = fc.bad;
+}
+
+function resetFlash() {
+  document.getElementById('fc-summary').style.display = 'none';
+  document.getElementById('fc-active').style.display  = 'none';
+  document.getElementById('fc-setup').style.display   = 'flex';
+}
+
+// ═══════════════════════════════════════
+// QUIZ
+// ═══════════════════════════════════════
+let qz = { deck:[], idx:0, score:0, wrong:0, dir:'mix', answered:false };
+
+function startQuizFromSetup() {
+  const deckType  = getOptVal('qz-deck-opts')    || 'unknown';
+  const dir       = getOptVal('qz-dir-opts')     || 'mix';
+  const countVal  = getOptVal('qz-count-opts')   || '6';
+  let deck = getDeck(deckType);
+  if (countVal !== 'all') deck = deck.slice(0, parseInt(countVal));
+  if (deck.length < 4) { alert('Not enough words in this deck (need at least 4).'); return; }
+
+  qz = { deck, idx:0, score:0, wrong:0, dir, answered:false };
+  document.getElementById('quiz-setup').style.display  = 'none';
+  document.getElementById('quiz-summary').style.display = 'none';
+  const active = document.getElementById('quiz-active');
+  active.style.display = 'flex';
+  showQuizQuestion();
+}
+
+function showQuizQuestion() {
+  const card = qz.deck[qz.idx];
+  const total = qz.deck.length;
+  document.getElementById('quiz-counter').textContent     = (qz.idx+1) + ' / ' + total;
+  document.getElementById('quiz-pb-fill').style.width     = ((qz.idx+1)/total*100) + '%';
+  document.getElementById('quiz-score-display').textContent = qz.score + ' ✓';
+
+  // Direction
+  let showJp;
+  if (qz.dir === 'jp') showJp = true;
+  else if (qz.dir === 'en') showJp = false;
+  else showJp = Math.random() < 0.5;
+  qz.showJp = showJp;
+
+  const wordEl = document.getElementById('qz-word');
+  const dirEl  = document.getElementById('qz-dir-label');
+  if (showJp) {
+    wordEl.textContent = card.j;
+    wordEl.className   = 'quiz-word';
+    dirEl.textContent  = 'Japanese → English';
+  } else {
+    wordEl.textContent = card.e;
+    wordEl.className   = 'quiz-word en';
+    dirEl.textContent  = 'English → Japanese';
+  }
+
+  // Build 4 options — re-shuffle wrong pool each question for true randomness
+  const correct = showJp ? card.e : card.j;
+  const wrongPool = shuffle(WORDS.filter(w => w.id !== card.id));
+  const wrongs = wrongPool.slice(0, 3).map(w => showJp ? w.e : w.j);
+  const options = shuffle([correct, ...wrongs]);
+
+  const container = document.getElementById('qz-options');
+  container.innerHTML = '';
+  options.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.className = 'quiz-opt' + (showJp ? '' : ' jp-opt');
+    btn.textContent = opt;
+    btn.addEventListener('click', () => {
+      if (qz.answered) return;
+      qz.answered = true;
+      if (opt === correct) {
+        btn.classList.add('correct');
+        qz.score++;
+        applyRating(card.id, 4);
+      } else {
+        btn.classList.add('wrong');
+        applyRating(card.id, 1);
+        // reveal correct
+        container.querySelectorAll('.quiz-opt').forEach(b => {
+          if (b.textContent === correct) b.classList.add('correct');
+        });
+      }
+      document.getElementById('quiz-next-btn').classList.add('visible');
+    });
+    container.appendChild(btn);
+  });
+
+  document.getElementById('quiz-next-btn').classList.remove('visible');
+  qz.answered = false;
+}
+
+function quizNext() {
+  qz.idx++;
+  if (qz.idx >= qz.deck.length) {
+    showQuizSummary();
+    return;
+  }
+  showQuizQuestion();
+}
+
+function showQuizSummary() {
+  document.getElementById('quiz-active').style.display = 'none';
+  const sum = document.getElementById('quiz-summary');
+  sum.style.display = 'flex';
+
+  const total = qz.deck.length;
+  const pct = Math.round(qz.score/total*100);
+  const emoji = pct >= 80 ? '🎉' : pct >= 50 ? '💪' : '📖';
+  document.getElementById('qz-sum-emoji').textContent = emoji;
+  document.getElementById('qz-sum-title').textContent = pct >= 80 ? 'Great score!' : pct >= 50 ? 'Not bad!' : 'Keep practising!';
+  document.getElementById('qz-sum-sub').textContent   = `${pct}% correct — ${qz.score} of ${total}`;
+  document.getElementById('qz-sum-score').textContent = qz.score;
+  document.getElementById('qz-sum-wrong').textContent = total - qz.score;
+}
+
+function resetQuiz() {
+  document.getElementById('quiz-summary').style.display = 'none';
+  document.getElementById('quiz-active').style.display  = 'none';
+  document.getElementById('quiz-setup').style.display   = 'flex';
+}
+
+// ═══════════════════════════════════════
+// BROWSE
+// ═══════════════════════════════════════
+let browseFilter = 'all';
+
+function setBrowseFilter(el) {
+  document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  browseFilter = el.dataset.filter;
+  renderBrowse();
+}
+
+function renderBrowse() {
+  const query = document.getElementById('browse-search').value.toLowerCase().trim();
+  let list = WORDS;
+
+  if (browseFilter === 'known')   list = list.filter(w => getCard(w.id).srs >= 4);
+  if (browseFilter === 'unknown') list = list.filter(w => getCard(w.id).srs < 4);
+
+  if (query) {
+    list = list.filter(w =>
+      w.j.toLowerCase().includes(query) ||
+      w.e.toLowerCase().includes(query)
+    );
+  }
+
+  const container = document.getElementById('browse-list');
+  const frag = document.createDocumentFragment();
+
+  const countDiv = document.createElement('div');
+  countDiv.className = 'browse-count';
+  countDiv.textContent = list.length + ' word' + (list.length !== 1 ? 's' : '');
+  frag.appendChild(countDiv);
+
+  list.forEach(w => {
+    const srs = getCard(w.id).srs;
+    const isKnown = srs >= 4;
+    const div = document.createElement('div');
+    div.className = 'browse-item';
+    div.innerHTML = `
+      <div class="browse-num">${w.id}</div>
+      <div class="browse-jp">${w.j}</div>
+      <div class="browse-en">${w.e}</div>
+      <div class="browse-tag ${isKnown ? 'k' : 'u'}">${isKnown ? '✓' : '·'}</div>
+    `;
+    frag.appendChild(div);
+  });
+
+  container.innerHTML = '';
+  container.appendChild(frag);
+}
+
+// ═══════════════════════════════════════
+// STATS
+// ═══════════════════════════════════════
+function updateStats() {
+  const total = WORDS.length;
+  const counts = [0,0,0,0,0,0]; // index 0 unused, 1-5 = srs level
+  let due = 0;
+  WORDS.forEach(w => {
+    const c = getCard(w.id);
+    const s = Math.max(0, Math.min(5, c.srs || 0));
+    if (s >= 1 && s <= 5) counts[s]++;
+    if (isDue(w.id)) due++;
+  });
+
+  const known    = counts[4] + counts[5];
+  const learning = counts[2] + counts[3];
+  const newCards = WORDS.filter(w => getCard(w.id).srs === 0).length;
+
+  document.getElementById('st-total').textContent    = total;
+  document.getElementById('st-known').textContent    = known;
+  document.getElementById('st-learning').textContent = learning;
+  document.getElementById('st-new').textContent      = newCards;
+  document.getElementById('st-due').textContent      = due;
+  document.getElementById('st-sessions').textContent = state.sessions || 0;
+
+  for (let s = 1; s <= 5; s++) {
+    const n = counts[s];
+    const pct = total > 0 ? (n/total*100) : 0;
+    document.getElementById('sb'+s).style.width = pct + '%';
+    document.getElementById('sc'+s).textContent = n;
+  }
+}
+
+// ═══════════════════════════════════════
+// THEME
+// ═══════════════════════════════════════
+let dark = localStorage.getItem('vocab_theme') === 'dark';
+function applyTheme() {
+  document.body.dataset.theme = dark ? 'dark' : 'light';
+  document.getElementById('theme-btn').textContent = dark ? '☽' : '☀';
+  localStorage.setItem('vocab_theme', dark ? 'dark' : 'light');
+}
+document.getElementById('theme-btn').addEventListener('click', () => {
+  dark = !dark; applyTheme();
+});
+applyTheme();
+
+// ═══════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════
+updateHome();
+renderBrowse();
+</script>
+</body>
+</html>
