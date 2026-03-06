@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Japanese Learning Machine</title>
+  <link href="https://fonts.googleapis.com/css2?family=Zen+Antique+Soft&family=Noto+Sans+JP:wght@300;700&family=Bebas+Neue&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0d0d0f;
+      --bg2: #111116;
+      --red: #e8312a;
+      --gold: #f5a623;
+      --indigo: #5b6ef5;
+      --text: #f0ece4;
+      --muted: #6b6b7a;
+      --card-bg: #16161d;
+    }
+
+    html, body {
+      min-height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Noto Sans JP', sans-serif;
+      overflow-x: hidden;
+    }
+
+    /* ── NOISE TEXTURE OVERLAY ── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.4;
+    }
+
+    /* ── DECORATIVE VERTICAL KANJI STRIP ── */
+    .kanji-strip {
+      position: fixed;
+      right: 28px;
+      top: 50%;
+      transform: translateY(-50%);
+      writing-mode: vertical-rl;
+      font-family: 'Zen Antique Soft', serif;
+      font-size: 1.1rem;
+      color: rgba(255,255,255,0.06);
+      letter-spacing: 0.3em;
+      user-select: none;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .kanji-strip-left {
+      position: fixed;
+      left: 28px;
+      top: 50%;
+      transform: translateY(-50%);
+      writing-mode: vertical-rl;
+      font-family: 'Zen Antique Soft', serif;
+      font-size: 1.1rem;
+      color: rgba(255,255,255,0.06);
+      letter-spacing: 0.3em;
+      user-select: none;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── HERO ── */
+    .hero {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      padding: 90px 20px 60px;
+    }
+
+    .hero-stamp {
+      display: inline-block;
+      border: 2px solid var(--red);
+      color: var(--red);
+      font-family: 'Zen Antique Soft', serif;
+      font-size: 0.85rem;
+      letter-spacing: 0.25em;
+      padding: 4px 14px;
+      margin-bottom: 28px;
+      opacity: 0;
+      animation: fadeUp 0.6s ease forwards 0.2s;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(3.2rem, 8vw, 7rem);
+      letter-spacing: 0.04em;
+      line-height: 1;
+      color: var(--text);
+      opacity: 0;
+      animation: fadeUp 0.7s ease forwards 0.4s;
+    }
+
+    h1 span {
+      color: var(--red);
+    }
+
+    .japanese-subtitle {
+      font-family: 'Zen Antique Soft', serif;
+      font-size: clamp(1.1rem, 2.5vw, 1.6rem);
+      color: var(--muted);
+      margin-top: 14px;
+      letter-spacing: 0.4em;
+      opacity: 0;
+      animation: fadeUp 0.7s ease forwards 0.6s;
+    }
+
+    .hero-line {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      margin-top: 36px;
+      opacity: 0;
+      animation: fadeUp 0.6s ease forwards 0.8s;
+    }
+    .hero-line::before, .hero-line::after {
+      content: '';
+      display: block;
+      width: 60px;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--red));
+    }
+    .hero-line::after {
+      background: linear-gradient(90deg, var(--red), transparent);
+    }
+    .hero-line span {
+      color: var(--red);
+      font-size: 1.3rem;
+    }
+
+    /* ── CARDS GRID ── */
+    .cards-section {
+      position: relative;
+      z-index: 1;
+      padding: 40px 40px 80px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 28px;
+    }
+
+    /* ── INDIVIDUAL CARD ── */
+    .card {
+      background: var(--card-bg);
+      border-radius: 4px;
+      padding: 44px 32px 40px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      position: relative;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.05);
+      opacity: 0;
+      transform: translateY(30px);
+      transition: transform 0.4s ease, box-shadow 0.4s ease, border-color 0.3s ease;
+      cursor: pointer;
+      text-decoration: none;
+    }
+
+    .card:nth-child(1) { animation: fadeUp 0.7s ease forwards 0.9s; }
+    .card:nth-child(2) { animation: fadeUp 0.7s ease forwards 1.05s; }
+    .card:nth-child(3) { animation: fadeUp 0.7s ease forwards 1.2s; }
+
+    /* Colored top bar */
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+    }
+
+    /* Glow blob in corner */
+    .card::after {
+      content: '';
+      position: absolute;
+      top: -60px; right: -60px;
+      width: 180px; height: 180px;
+      border-radius: 50%;
+      opacity: 0.07;
+      transition: opacity 0.4s ease, transform 0.4s ease;
+    }
+
+    .card:hover::after { opacity: 0.18; transform: scale(1.2); }
+
+    /* Card 1 — Red */
+    .card-red::before { background: var(--red); }
+    .card-red::after { background: var(--red); }
+    .card-red:hover { border-color: rgba(232,49,42,0.35); box-shadow: 0 8px 40px rgba(232,49,42,0.15); }
+    .card-red .card-icon { color: var(--red); }
+    .card-red .card-btn { background: var(--red); }
+    .card-red .card-btn:hover { box-shadow: 0 0 24px rgba(232,49,42,0.5); }
+
+    /* Card 2 — Indigo */
+    .card-indigo::before { background: var(--indigo); }
+    .card-indigo::after { background: var(--indigo); }
+    .card-indigo:hover { border-color: rgba(91,110,245,0.35); box-shadow: 0 8px 40px rgba(91,110,245,0.15); }
+    .card-indigo .card-icon { color: var(--indigo); }
+    .card-indigo .card-btn { background: var(--indigo); }
+    .card-indigo .card-btn:hover { box-shadow: 0 0 24px rgba(91,110,245,0.5); }
+
+    /* Card 3 — Gold */
+    .card-gold::before { background: var(--gold); }
+    .card-gold::after { background: var(--gold); }
+    .card-gold:hover { border-color: rgba(245,166,35,0.35); box-shadow: 0 8px 40px rgba(245,166,35,0.15); }
+    .card-gold .card-icon { color: var(--gold); }
+    .card-gold .card-btn { background: var(--gold); color: #1a1200; }
+    .card-gold .card-btn:hover { box-shadow: 0 0 24px rgba(245,166,35,0.5); }
+
+    .card:hover { transform: translateY(-6px); }
+
+    .card-icon {
+      font-size: 2.8rem;
+      margin-bottom: 20px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .card-jp {
+      font-family: 'Zen Antique Soft', serif;
+      font-size: 0.75rem;
+      letter-spacing: 0.3em;
+      color: var(--muted);
+      margin-bottom: 8px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .card-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 2rem;
+      letter-spacing: 0.06em;
+      color: var(--text);
+      margin-bottom: 12px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .card-desc {
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.7;
+      flex: 1;
+      position: relative;
+      z-index: 1;
+      margin-bottom: 30px;
+      font-weight: 300;
+    }
+
+    .card-btn {
+      display: inline-block;
+      padding: 11px 28px;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1rem;
+      letter-spacing: 0.12em;
+      color: #fff;
+      border: none;
+      border-radius: 2px;
+      cursor: pointer;
+      text-decoration: none;
+      position: relative;
+      z-index: 1;
+      transition: box-shadow 0.3s ease, transform 0.2s ease;
+    }
+    .card-btn:hover { transform: scale(1.04); }
+
+    /* ── FOOTER ── */
+    footer {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      padding: 30px 20px 50px;
+      color: var(--muted);
+      font-size: 0.78rem;
+      letter-spacing: 0.2em;
+    }
+    footer span { color: var(--red); }
+
+    /* ── ANIMATIONS ── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 860px) {
+      .cards-grid { grid-template-columns: 1fr; max-width: 480px; margin: 0 auto; }
+      .kanji-strip, .kanji-strip-left { display: none; }
+      .cards-section { padding: 20px 24px 60px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="kanji-strip">日本語・学習・言葉・漢字・食べ物・勉強・文化</div>
+  <div class="kanji-strip-left">読む・書く・話す・聞く・覚える・練習・上手</div>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-stamp">学習ツール集</div>
+    <h1>Japanese<br/><span>Learning</span> Machine</h1>
+    <div class="japanese-subtitle">日本語学習マシン</div>
+    <div class="hero-line"><span>⛩</span></div>
+  </section>
+
+  <!-- CARDS -->
+  <section class="cards-section">
+    <div class="cards-grid">
+
+      <!-- Card 1: Stories and Words -->
+      <a class="card card-red" href="vocab_learner_4.html">
+        <div class="card-icon">📖</div>
+        <div class="card-jp">ものがたり・ことば</div>
+        <div class="card-title">Stories & Words</div>
+        <p class="card-desc">Expand your Japanese vocabulary through immersive stories and contextual word learning.</p>
+        <span class="card-btn">Open →</span>
+      </a>
+
+      <!-- Card 2: Kanji -->
+      <a class="card card-indigo" href="kanji_learner_12.html">
+        <div class="card-icon">漢</div>
+        <div class="card-jp">かんじ・れんしゅう</div>
+        <div class="card-title">Kanji</div>
+        <p class="card-desc">Master Japanese kanji characters with structured drills, stroke order, and meaning practice.</p>
+        <span class="card-btn">Open →</span>
+      </a>
+
+      <!-- Card 3: Food Kanji -->
+      <a class="card card-gold" href="food_kanji_5.html">
+        <div class="card-icon">🍱</div>
+        <div class="card-jp">しょくじ・かんじ</div>
+        <div class="card-title">Food Kanji</div>
+        <p class="card-desc">Learn kanji through the delicious world of Japanese cuisine — from ramen to sushi and beyond.</p>
+        <span class="card-btn">Open →</span>
+      </a>
+
+    </div>
+  </section>
+
+  <footer>
+    made with <span>愛</span> · 日本語学習マシン
+  </footer>
+
+</body>
+</html>
