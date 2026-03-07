@@ -1768,5 +1768,67 @@ function resetRead() {
 
 buildReadPage();
 </script>
+
+<!-- ── BOTTOM NAV BAR ── -->
+<style>
+  .jlm-nav {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px 16px 14px;
+    background: rgba(10, 6, 3, 0.82);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-top: 1px solid rgba(255,255,255,0.07);
+  }
+  .jlm-nav a {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    border-radius: 20px;
+    font-family: -apple-system, sans-serif;
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    text-decoration: none;
+    color: rgba(255,255,255,0.45);
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.07);
+    transition: all 0.2s ease;
+    white-space: nowrap;
+  }
+  .jlm-nav a:hover {
+    color: #fff;
+    background: rgba(255,255,255,0.12);
+    border-color: rgba(255,255,255,0.18);
+  }
+  .jlm-nav a.active {
+    color: #e8312a;
+    background: rgba(232,49,42,0.15);
+    border-color: rgba(232,49,42,0.35);
+  }
+  .jlm-nav .nav-divider {
+    width: 1px; height: 18px;
+    background: rgba(255,255,255,0.1);
+    flex-shrink: 0;
+  }
+  body { padding-bottom: 60px; }
+</style>
+
+<nav class="jlm-nav">
+  <a href="index.html">🏠 Home</a>
+  <div class="nav-divider"></div>
+  <a href="vocab_learner_4.html" class="active">📖 Stories</a>
+  <div class="nav-divider"></div>
+  <a href="kanji_learner_12.html">漢 Kanji</a>
+  <div class="nav-divider"></div>
+  <a href="food_kanji_6.html">🍱 Food Kanji</a>
+</nav>
+
 </body>
 </html>
