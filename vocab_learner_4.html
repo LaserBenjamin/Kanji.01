@@ -508,6 +508,46 @@ html, body { height:100%; background:var(--bg); color:var(--text); font-family:'
 
 /* ── Utility ── */
 .hidden { display:none !important; }
+
+/* ── Speech ── */
+.speech-btn {
+  display:inline-flex; align-items:center; justify-content:center;
+  background:none; border:none; cursor:pointer; padding:0 2px;
+  font-size:14px; opacity:0.45; transition:opacity 0.15s, transform 0.15s;
+  vertical-align:middle; line-height:1;
+}
+.speech-btn:hover { opacity:1; }
+.speech-btn.speaking { opacity:1; animation:speech-pulse 0.7s ease-in-out infinite alternate; }
+@keyframes speech-pulse { from { transform:scale(1); } to { transform:scale(1.25); } }
+
+/* Read page speech toolbar */
+#read-speech-bar {
+  display:flex; align-items:center; gap:8px;
+  padding:8px 18px 0; flex-shrink:0; flex-wrap:wrap;
+}
+.speech-play-btn {
+  display:inline-flex; align-items:center; gap:5px;
+  padding:7px 14px; border-radius:20px;
+  border:1.5px solid var(--border); background:var(--surface);
+  color:var(--text2); font-size:12px; font-weight:500;
+  cursor:pointer; transition:all 0.15s; font-family:'DM Sans',sans-serif;
+  white-space:nowrap;
+}
+.speech-play-btn:hover { border-color:var(--accent); color:var(--accent); }
+.speech-play-btn.active { background:var(--accent); color:#fff; border-color:var(--accent); }
+
+/* Echo countdown bar */
+#echo-bar-wrap {
+  display:none; align-items:center; gap:10px;
+  padding:6px 18px; flex-shrink:0;
+}
+#echo-bar-wrap.visible { display:flex; }
+#echo-label { font-size:11px; color:var(--text2); white-space:nowrap; }
+#echo-track { flex:1; height:4px; background:var(--border); border-radius:99px; overflow:hidden; }
+#echo-fill { height:100%; background:var(--accent); border-radius:99px; transition:width 0.1s linear; }
+
+/* Sentence highlight during read-aloud */
+.read-line.speaking-line { background:rgba(192,57,43,0.06); border-radius:6px; margin:-2px -4px; padding:2px 4px; }
 </style>
 </head>
 <body data-theme="light">
@@ -668,11 +708,13 @@ html, body { height:100%; background:var(--bg); color:var(--text); font-family:'
           <div class="fc-face" id="fc-front">
             <div class="fc-direction" id="fc-dir-label">Japanese</div>
             <div class="fc-word" id="fc-front-word">—</div>
+            <button class="speech-btn" id="fc-speak-btn" onclick="event.stopPropagation();speakFcWord()" title="Listen">🔊</button>
             <div class="fc-hint">tap to reveal</div>
           </div>
           <div class="fc-face" id="fc-back">
             <div id="fc-back-jp" class="fc-answer-jp"></div>
             <div id="fc-back-en" class="fc-answer-en"></div>
+            <button class="speech-btn" id="fc-speak-back-btn" onclick="event.stopPropagation();speakFcBack()" title="Listen">🔊</button>
             <div class="fc-tap-hint">rate yourself below</div>
           </div>
         </div>
@@ -856,6 +898,14 @@ html, body { height:100%; background:var(--bg); color:var(--text); font-family:'
       <button class="read-ctrl-btn" id="btn-reveal-all" onclick="toggleRevealAll()">Show all English</button>
       <button class="read-ctrl-btn" id="btn-translations" onclick="toggleAllTranslations()">Show all translations</button>
       <button class="read-ctrl-btn" onclick="resetRead()">Reset</button>
+    </div>
+    <div id="read-speech-bar">
+      <button class="speech-play-btn" id="btn-read-aloud" onclick="toggleReadAloud()">▶ Read aloud</button>
+      <button class="speech-play-btn" id="btn-echo-mode" onclick="toggleEchoMode()">🔁 Echo practice</button>
+    </div>
+    <div id="echo-bar-wrap">
+      <div id="echo-label">Repeat now…</div>
+      <div id="echo-track"><div id="echo-fill" style="width:100%"></div></div>
     </div>
     <div id="read-hint"><span>💡</span> Tap a word to see its English. Tap ① to reveal the full sentence translation.</div>
     <div id="read-body"></div>
@@ -1674,8 +1724,12 @@ function buildReadPage() {
           span.className = 'read-word';
           span.textContent = tok.j;
           span.dataset.en = tok.e;
+          span.dataset.jp = tok.j;
           span.dataset.revealed = '0';
-          span.addEventListener('click', () => revealWord(span));
+          span.addEventListener('click', () => {
+            speakJapanese(tok.j);
+            revealWord(span);
+          });
           line.appendChild(span);
         } else if (tok.t === 'p') {
           const span = document.createElement('span');
@@ -1767,8 +1821,169 @@ function resetRead() {
 }
 
 buildReadPage();
-</script>
 
+// ═══════════════════════════════════════
+// SPEECH ENGINE
+// ═══════════════════════════════════════
+const SPEECH_RATE = 0.7;
+const ECHO_PAUSE  = 5000;
+
+let speechSupported = 'speechSynthesis' in window;
+let speechActive    = false;
+let echoActive      = false;
+let speechQueue     = [];
+let echoRafId       = null;
+let currentLineEl   = null;
+
+function speakJapanese(text, onEnd) {
+  if (!speechSupported) return;
+  window.speechSynthesis.cancel();
+  const utt = new SpeechSynthesisUtterance(text);
+  utt.lang  = 'ja-JP';
+  utt.rate  = SPEECH_RATE;
+  utt.pitch = 1.0;
+  if (onEnd) utt.onend = onEnd;
+  window.speechSynthesis.speak(utt);
+}
+
+// Flashcard front: speak word in appropriate language
+function speakFcWord() {
+  if (!speechSupported || !fc.deck[fc.idx]) return;
+  const card = fc.deck[fc.idx];
+  const btn  = document.getElementById('fc-speak-btn');
+  btn.classList.add('speaking');
+  window.speechSynthesis.cancel();
+  const utt = new SpeechSynthesisUtterance(fc.showJp ? card.j : card.e);
+  utt.lang  = fc.showJp ? 'ja-JP' : 'en-US';
+  utt.rate  = SPEECH_RATE;
+  utt.onend = () => btn.classList.remove('speaking');
+  window.speechSynthesis.speak(utt);
+}
+
+// Flashcard back: always speak Japanese
+function speakFcBack() {
+  if (!speechSupported || !fc.deck[fc.idx]) return;
+  const card = fc.deck[fc.idx];
+  const btn  = document.getElementById('fc-speak-back-btn');
+  btn.classList.add('speaking');
+  window.speechSynthesis.cancel();
+  const utt = new SpeechSynthesisUtterance(card.j);
+  utt.lang  = 'ja-JP';
+  utt.rate  = SPEECH_RATE;
+  utt.onend = () => btn.classList.remove('speaking');
+  window.speechSynthesis.speak(utt);
+}
+
+// Build full text of a sentence from its tokens
+function sentenceText(sent) {
+  return sent.tokens.map(t => t.j).join('');
+}
+
+// Collect all sentences with their DOM line elements
+function buildSpeechQueue() {
+  const queue = [];
+  let idx = 0;
+  STORY.forEach(section => {
+    section.sentences.forEach(sent => {
+      queue.push({ text: sentenceText(sent), lineEl: document.getElementById('line-' + idx) });
+      idx++;
+    });
+  });
+  return queue;
+}
+
+function setActiveLine(el) {
+  if (currentLineEl) currentLineEl.classList.remove('speaking-line');
+  currentLineEl = el;
+  if (el) { el.classList.add('speaking-line'); el.scrollIntoView({ behavior:'smooth', block:'nearest' }); }
+}
+
+// ── Read aloud ──
+function playQueue(queue, idx) {
+  if (!speechActive || idx >= queue.length) { stopReadAloud(); return; }
+  setActiveLine(queue[idx].lineEl);
+  speakJapanese(queue[idx].text, () => {
+    if (speechActive) setTimeout(() => playQueue(queue, idx + 1), 400);
+  });
+}
+
+function toggleReadAloud() {
+  if (!speechSupported) { alert('Speech synthesis is not supported in this browser.'); return; }
+  if (speechActive) {
+    stopReadAloud();
+  } else {
+    if (echoActive) stopEchoMode();
+    speechActive = true;
+    const btn = document.getElementById('btn-read-aloud');
+    btn.textContent = '⏹ Stop reading';
+    btn.classList.add('active');
+    playQueue(buildSpeechQueue(), 0);
+  }
+}
+
+function stopReadAloud() {
+  speechActive = false;
+  window.speechSynthesis.cancel();
+  setActiveLine(null);
+  const btn = document.getElementById('btn-read-aloud');
+  if (btn) { btn.textContent = '▶ Read aloud'; btn.classList.remove('active'); }
+}
+
+// ── Echo practice ──
+function runEcho(queue, idx) {
+  if (!echoActive || idx >= queue.length) { stopEchoMode(); return; }
+  setActiveLine(queue[idx].lineEl);
+  speakJapanese(queue[idx].text, () => {
+    if (!echoActive) return;
+    const wrap = document.getElementById('echo-bar-wrap');
+    const fill = document.getElementById('echo-fill');
+    wrap.classList.add('visible');
+    fill.style.width = '100%';
+    const start = performance.now();
+    function tick() {
+      const pct = Math.max(0, 100 - ((performance.now() - start) / ECHO_PAUSE) * 100);
+      fill.style.width = pct + '%';
+      if (pct > 0 && echoActive) {
+        echoRafId = requestAnimationFrame(tick);
+      } else {
+        wrap.classList.remove('visible');
+        if (echoActive) runEcho(queue, idx + 1);
+      }
+    }
+    echoRafId = requestAnimationFrame(tick);
+  });
+}
+
+function toggleEchoMode() {
+  if (!speechSupported) { alert('Speech synthesis is not supported in this browser.'); return; }
+  if (echoActive) {
+    stopEchoMode();
+  } else {
+    if (speechActive) stopReadAloud();
+    echoActive = true;
+    const btn = document.getElementById('btn-echo-mode');
+    btn.textContent = '⏹ Stop echo';
+    btn.classList.add('active');
+    runEcho(buildSpeechQueue(), 0);
+  }
+}
+
+function stopEchoMode() {
+  echoActive = false;
+  cancelAnimationFrame(echoRafId);
+  window.speechSynthesis.cancel();
+  setActiveLine(null);
+  document.getElementById('echo-bar-wrap').classList.remove('visible');
+  const btn = document.getElementById('btn-echo-mode');
+  if (btn) { btn.textContent = '🔁 Echo practice'; btn.classList.remove('active'); }
+}
+
+// Stop speech when navigating away from read page
+const _origShowPage = showPage;
+window.showPage = function(name) {
+  if (name !== 'read') { stopReadAloud(); stopEchoMode(); }
+  _origShowPage(name);
+};
 <!-- ── BOTTOM NAV BAR ── -->
 <style>
   .jlm-nav {
@@ -1786,40 +2001,20 @@ buildReadPage();
     border-top: 1px solid rgba(255,255,255,0.07);
   }
   .jlm-nav a {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 7px 14px;
-    border-radius: 20px;
-    font-family: -apple-system, sans-serif;
-    font-size: 0.78rem;
-    font-weight: 600;
-    letter-spacing: 0.03em;
-    text-decoration: none;
+    display: flex; align-items: center; gap: 6px;
+    padding: 7px 14px; border-radius: 20px;
+    font-family: -apple-system, sans-serif; font-size: 0.78rem; font-weight: 600;
+    letter-spacing: 0.03em; text-decoration: none;
     color: rgba(255,255,255,0.45);
     background: rgba(255,255,255,0.05);
     border: 1px solid rgba(255,255,255,0.07);
-    transition: all 0.2s ease;
-    white-space: nowrap;
+    transition: all 0.2s ease; white-space: nowrap;
   }
-  .jlm-nav a:hover {
-    color: #fff;
-    background: rgba(255,255,255,0.12);
-    border-color: rgba(255,255,255,0.18);
-  }
-  .jlm-nav a.active {
-    color: #e8312a;
-    background: rgba(232,49,42,0.15);
-    border-color: rgba(232,49,42,0.35);
-  }
-  .jlm-nav .nav-divider {
-    width: 1px; height: 18px;
-    background: rgba(255,255,255,0.1);
-    flex-shrink: 0;
-  }
+  .jlm-nav a:hover { color: #fff; background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.18); }
+  .jlm-nav a.active { color: #e8312a; background: rgba(232,49,42,0.15); border-color: rgba(232,49,42,0.35); }
+  .jlm-nav .nav-divider { width: 1px; height: 18px; background: rgba(255,255,255,0.1); flex-shrink: 0; }
   body { padding-bottom: 60px; }
 </style>
-
 <nav class="jlm-nav">
   <a href="index.html">🏠 Home</a>
   <div class="nav-divider"></div>
@@ -1829,6 +2024,5 @@ buildReadPage();
   <div class="nav-divider"></div>
   <a href="food_kanji_6.html">🍱 Food Kanji</a>
 </nav>
-
 </body>
 </html>
