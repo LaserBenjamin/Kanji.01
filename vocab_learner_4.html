@@ -525,6 +525,29 @@ html, body { height:100%; background:var(--bg); color:var(--text); font-family:'
   display:flex; align-items:center; gap:8px;
   padding:8px 18px 0; flex-shrink:0; flex-wrap:wrap;
 }
+/* Speed slider */
+#speech-speed-wrap {
+  display:flex; align-items:center; gap:7px;
+  padding:5px 12px; border-radius:20px;
+  border:1.5px solid var(--border); background:var(--surface);
+  font-size:12px; color:var(--text2); font-family:'DM Sans',sans-serif;
+}
+#speech-speed-wrap label { white-space:nowrap; font-weight:500; }
+#speech-speed-slider {
+  -webkit-appearance:none; appearance:none;
+  width:80px; height:4px; border-radius:99px;
+  background:var(--border); outline:none; cursor:pointer;
+}
+#speech-speed-slider::-webkit-slider-thumb {
+  -webkit-appearance:none; appearance:none;
+  width:14px; height:14px; border-radius:50%;
+  background:var(--accent); cursor:pointer;
+}
+#speech-speed-slider::-moz-range-thumb {
+  width:14px; height:14px; border-radius:50%;
+  background:var(--accent); cursor:pointer; border:none;
+}
+#speech-speed-val { font-weight:600; color:var(--text); min-width:26px; }
 .speech-play-btn {
   display:inline-flex; align-items:center; gap:5px;
   padding:7px 14px; border-radius:20px;
@@ -902,6 +925,12 @@ html, body { height:100%; background:var(--bg); color:var(--text); font-family:'
     <div id="read-speech-bar">
       <button class="speech-play-btn" id="btn-read-aloud" onclick="toggleReadAloud()">▶ Read aloud</button>
       <button class="speech-play-btn" id="btn-echo-mode" onclick="toggleEchoMode()">🔁 Echo practice</button>
+      <div id="speech-speed-wrap">
+        <label for="speech-speed-slider">🐢</label>
+        <input type="range" id="speech-speed-slider" min="0.5" max="1.0" step="0.1" value="0.7"
+          oninput="document.getElementById('speech-speed-val').textContent=parseFloat(this.value).toFixed(1)">
+        <span id="speech-speed-val">0.7</span>
+      </div>
     </div>
     <div id="echo-bar-wrap">
       <div id="echo-label">Repeat now…</div>
@@ -1825,8 +1854,12 @@ buildReadPage();
 // ═══════════════════════════════════════
 // SPEECH ENGINE
 // ═══════════════════════════════════════
-const SPEECH_RATE = 0.7;
 const ECHO_PAUSE  = 5000;
+
+function getSpeechRate() {
+  const slider = document.getElementById('speech-speed-slider');
+  return slider ? parseFloat(slider.value) : 0.7;
+}
 
 let speechSupported = 'speechSynthesis' in window;
 let speechActive    = false;
@@ -1840,7 +1873,7 @@ function speakJapanese(text, onEnd) {
   window.speechSynthesis.cancel();
   const utt = new SpeechSynthesisUtterance(text);
   utt.lang  = 'ja-JP';
-  utt.rate  = SPEECH_RATE;
+  utt.rate  = getSpeechRate();
   utt.pitch = 1.0;
   if (onEnd) utt.onend = onEnd;
   window.speechSynthesis.speak(utt);
@@ -1855,7 +1888,7 @@ function speakFcWord() {
   window.speechSynthesis.cancel();
   const utt = new SpeechSynthesisUtterance(fc.showJp ? card.j : card.e);
   utt.lang  = fc.showJp ? 'ja-JP' : 'en-US';
-  utt.rate  = SPEECH_RATE;
+  utt.rate  = getSpeechRate();
   utt.onend = () => btn.classList.remove('speaking');
   window.speechSynthesis.speak(utt);
 }
@@ -1869,7 +1902,7 @@ function speakFcBack() {
   window.speechSynthesis.cancel();
   const utt = new SpeechSynthesisUtterance(card.j);
   utt.lang  = 'ja-JP';
-  utt.rate  = SPEECH_RATE;
+  utt.rate  = getSpeechRate();
   utt.onend = () => btn.classList.remove('speaking');
   window.speechSynthesis.speak(utt);
 }
@@ -1984,6 +2017,8 @@ window.showPage = function(name) {
   if (name !== 'read') { stopReadAloud(); stopEchoMode(); }
   _origShowPage(name);
 };
+</script>
+
 <!-- ── BOTTOM NAV BAR ── -->
 <style>
   .jlm-nav {
