@@ -571,6 +571,94 @@ html, body { height:100%; background:var(--bg); color:var(--text); font-family:'
 
 /* Sentence highlight during read-aloud */
 .read-line.speaking-line { background:rgba(192,57,43,0.06); border-radius:6px; margin:-2px -4px; padding:2px 4px; }
+
+/* ═══════════════════════════════════
+   STORY PICKER
+═══════════════════════════════════ */
+#page-read-picker { padding:0; }
+
+#picker-header {
+  padding:14px 18px 10px; border-bottom:1px solid var(--border);
+  flex-shrink:0;
+}
+#picker-header h2 {
+  font-family:'Shippori Mincho',serif; font-size:20px; font-weight:800; letter-spacing:-0.3px;
+}
+#picker-header p { font-size:12px; color:var(--text3); margin-top:3px; }
+
+#picker-body { flex:1; overflow-y:auto; padding:14px 18px 24px; display:flex; flex-direction:column; gap:20px; }
+
+.picker-section-title {
+  font-size:11px; font-weight:600; color:var(--text3);
+  text-transform:uppercase; letter-spacing:0.8px; margin-bottom:10px;
+}
+
+.story-card {
+  background:var(--surface); border:1.5px solid var(--border); border-radius:14px;
+  padding:14px 16px; cursor:pointer; transition:all 0.15s; position:relative;
+  display:flex; flex-direction:column; gap:5px; margin-bottom:10px;
+}
+.story-card:active { transform:scale(0.98); }
+.story-card.completed { opacity:0.6; }
+.story-card:hover { border-color:var(--accent); }
+
+.story-card-top { display:flex; align-items:flex-start; justify-content:space-between; gap:8px; }
+.story-card-title { font-family:'Shippori Mincho',serif; font-size:16px; font-weight:700; flex:1; }
+.story-card-actions { display:flex; gap:6px; align-items:center; flex-shrink:0; }
+
+.story-fav-btn {
+  background:none; border:none; cursor:pointer; font-size:16px;
+  opacity:0.35; transition:opacity 0.15s, transform 0.15s; padding:2px;
+  line-height:1;
+}
+.story-fav-btn:hover { opacity:1; transform:scale(1.2); }
+.story-fav-btn.active { opacity:1; }
+
+.story-status-badge {
+  font-size:10px; font-weight:600; padding:3px 9px; border-radius:20px;
+  text-transform:uppercase; letter-spacing:0.4px; flex-shrink:0;
+}
+.badge-unread   { background:var(--surface2); color:var(--text3); border:1px solid var(--border); }
+.badge-progress { background:#FEF3E2; color:#D35400; border:1px solid #F5CBA7; }
+.badge-done     { background:#E8F6EF; color:#1E8449; border:1px solid #A9DFBF; }
+[data-theme="dark"] .badge-progress { background:#2E1A08; color:#F39C12; border-color:#5D3A1A; }
+[data-theme="dark"] .badge-done     { background:#0D2E1A; color:#2ECC71; border-color:#1A5C36; }
+
+.story-card-desc { font-size:12px; color:var(--text2); line-height:1.5; }
+.story-card-meta { font-size:11px; color:var(--text3); display:flex; gap:10px; }
+
+.story-completed-stamp {
+  position:absolute; top:10px; right:44px;
+  font-size:18px; opacity:0.25; pointer-events:none;
+}
+
+.picker-empty {
+  font-size:13px; color:var(--text3); text-align:center;
+  padding:20px 0; font-style:italic;
+}
+
+/* In-story header fav button */
+#read-fav-btn {
+  background:none; border:none; cursor:pointer; font-size:18px;
+  opacity:0.4; transition:opacity 0.15s, transform 0.15s; padding:2px 0 0 6px;
+  line-height:1; vertical-align:middle;
+}
+#read-fav-btn:hover { opacity:1; transform:scale(1.15); }
+#read-fav-btn.active { opacity:1; }
+
+/* Library complete banner */
+#library-complete-banner {
+  display:none; margin:0 0 4px;
+  background:linear-gradient(135deg,#E8F6EF,#D5F5E3);
+  border:1px solid #A9DFBF; border-radius:12px;
+  padding:12px 16px; font-size:13px; color:#1A7A4A; font-weight:500;
+  text-align:center;
+}
+[data-theme="dark"] #library-complete-banner {
+  background:linear-gradient(135deg,#0D2E1A,#0A2015);
+  border-color:#1A5C36; color:#2ECC71;
+}
+#library-complete-banner.visible { display:block; }
 </style>
 </head>
 <body data-theme="light">
@@ -590,7 +678,7 @@ html, body { height:100%; background:var(--bg); color:var(--text); font-family:'
     <button class="nav-tab" data-page="flash">Flashcards</button>
     <button class="nav-tab" data-page="quiz">Quiz</button>
     <button class="nav-tab" data-page="browse">Browse</button>
-    <button class="nav-tab" data-page="read">Read</button>
+    <button class="nav-tab" data-page="read-picker">Read</button>
     <button class="nav-tab" data-page="stats">Stats</button>
   </div>
 
@@ -911,16 +999,44 @@ html, body { height:100%; background:var(--bg); color:var(--text); font-family:'
     </div>
   </div>
 
-  <!-- ═══ READ ═══ -->
+  <!-- ═══ STORY PICKER ═══ -->
+  <div id="page-read-picker" class="page">
+    <div id="picker-header">
+      <h2>読む — Read</h2>
+      <p>Choose a story from your library or favourites</p>
+    </div>
+    <div id="picker-body">
+      <div id="library-complete-banner">🎉 Library complete! Ask Claude for 10 new stories.</div>
+      <div>
+        <div class="picker-section-title">📚 Library</div>
+        <div id="picker-library-list"></div>
+      </div>
+      <div>
+        <div class="picker-section-title">⭐ Favourites</div>
+        <div id="picker-fav-list"><div class="picker-empty">No favourites yet — star a story to save it here.</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ READ (story view) ═══ -->
   <div id="page-read" class="page">
     <div id="read-header">
-      <div id="read-title">たなかさんのにちようび</div>
-      <div id="read-subtitle">Tanaka-san's Sunday — written using your known words</div>
+      <div style="display:flex;align-items:center;">
+        <button class="icon-btn" onclick="backToPicker()" style="margin-right:10px;font-size:13px;">← Back</button>
+        <div>
+          <div id="read-title" style="display:flex;align-items:center;gap:4px;">
+            たなかさんのにちようび
+            <button id="read-fav-btn" onclick="toggleFavFromReader()" title="Favourite">☆</button>
+          </div>
+          <div id="read-subtitle">Tanaka-san's Sunday</div>
+        </div>
+      </div>
     </div>
     <div id="read-controls">
       <button class="read-ctrl-btn" id="btn-reveal-all" onclick="toggleRevealAll()">Show all English</button>
-      <button class="read-ctrl-btn" id="btn-translations" onclick="toggleAllTranslations()">Show all translations</button>
+      <button class="read-ctrl-btn" id="btn-translations" onclick="toggleAllTranslations()">Show translations</button>
       <button class="read-ctrl-btn" onclick="resetRead()">Reset</button>
+      <button class="read-ctrl-btn" id="btn-mark-done" onclick="markStoryDone()">Mark complete ✓</button>
     </div>
     <div id="read-speech-bar">
       <button class="speech-play-btn" id="btn-read-aloud" onclick="toggleReadAloud()">▶ Read aloud</button>
@@ -936,7 +1052,7 @@ html, body { height:100%; background:var(--bg); color:var(--text); font-family:'
       <div id="echo-label">Repeat now…</div>
       <div id="echo-track"><div id="echo-fill" style="width:100%"></div></div>
     </div>
-    <div id="read-hint"><span>💡</span> Tap a word to see its English. Tap ① to reveal the full sentence translation.</div>
+    <div id="read-hint"><span>💡</span> Tap a word to hear &amp; see its English. Tap ① for the sentence translation.</div>
     <div id="read-body"></div>
   </div>
 
@@ -1429,15 +1545,381 @@ updateHome();
 renderBrowse();
 
 // ═══════════════════════════════════════
-// READ PAGE — STORY DATA
+// READ PAGE — STORY LIBRARY
 // ═══════════════════════════════════════
-// Each sentence: array of tokens
-// Token types:
-//   { t:'w', j:'日本語', e:'English' }   — tappable word
-//   { t:'p', j:'は' }                    — highlighted particle (not tappable)
-//   { t:'x', j:'。' }                    — punctuation / plain text
+const STORIES = [
+  {
+    id: 'tanaka-sunday',
+    title: 'たなかさんのにちようび',
+    titleEn: "Tanaka-san's Sunday",
+    desc: 'A quiet Sunday morning leads to a café and park visit with a friend.',
+    icon: '🌤',
+    sections: [
+      {
+        section: '１。あさ',
+        sentences: [
+          { trans: 'On Sunday morning, Tanaka-san woke up late.', tokens: [{t:'w',j:'にちようび',e:'Sunday'},{t:'p',j:'の'},{t:'w',j:'あさ',e:'morning'},{t:'x',j:'、'},{t:'w',j:'たなかさん',e:'Tanaka-san'},{t:'p',j:'は'},{t:'w',j:'おそく',e:'late'},{t:'w',j:'おきました',e:'woke up'},{t:'x',j:'。'}] },
+          { trans: 'The room was cold.', tokens: [{t:'w',j:'へや',e:'room'},{t:'p',j:'は'},{t:'w',j:'さむかった',e:'was cold'},{t:'x',j:'です。'}] },
+          { trans: 'Outside the window it was cloudy.', tokens: [{t:'w',j:'まど',e:'window'},{t:'p',j:'の'},{t:'w',j:'そと',e:'outside'},{t:'p',j:'は'},{t:'w',j:'くもり',e:'cloudy'},{t:'x',j:'でした。'}] },
+          { trans: '"It\'s cold, but I want to go out today," Tanaka-san thought.', tokens: [{t:'x',j:'「'},{t:'w',j:'さむい',e:'cold'},{t:'p',j:'けど'},{t:'x',j:'、'},{t:'w',j:'きょう',e:'today'},{t:'p',j:'は'},{t:'w',j:'でかけたい',e:'want to go out'},{t:'x',j:'。」'},{t:'p',j:'と'},{t:'w',j:'たなかさん',e:'Tanaka-san'},{t:'p',j:'は'},{t:'w',j:'おもいました',e:'thought'},{t:'x',j:'。'}] },
+        ]
+      },
+      {
+        section: '２。あさごはん',
+        sentences: [
+          { trans: 'Tanaka-san ate bread and egg.', tokens: [{t:'w',j:'たなかさん',e:'Tanaka-san'},{t:'p',j:'は'},{t:'w',j:'パン',e:'bread'},{t:'p',j:'と'},{t:'w',j:'たまご',e:'egg'},{t:'p',j:'を'},{t:'w',j:'たべました',e:'ate'},{t:'x',j:'。'}] },
+          { trans: 'He also drank coffee.', tokens: [{t:'w',j:'コーヒー',e:'coffee'},{t:'p',j:'も'},{t:'w',j:'のみました',e:'drank'},{t:'x',j:'。'}] },
+          { trans: 'Every morning he drinks coffee.', tokens: [{t:'w',j:'まいあさ',e:'every morning'},{t:'w',j:'コーヒー',e:'coffee'},{t:'p',j:'を'},{t:'w',j:'のみます',e:'drinks'},{t:'x',j:'。'}] },
+          { trans: '"Delicious. Right, let\'s go."', tokens: [{t:'x',j:'「'},{t:'w',j:'おいしい',e:'delicious'},{t:'x',j:'。'},{t:'w',j:'よし',e:'right / okay'},{t:'x',j:'、'},{t:'w',j:'いこう',e:'let\'s go'},{t:'x',j:'。」'}] },
+        ]
+      },
+      {
+        section: '３。まちへ',
+        sentences: [
+          { trans: 'Tanaka-san left home and walked to the station.', tokens: [{t:'w',j:'たなかさん',e:'Tanaka-san'},{t:'p',j:'は'},{t:'w',j:'うち',e:'home'},{t:'p',j:'を'},{t:'w',j:'でて',e:'left'},{t:'x',j:'、'},{t:'w',j:'えき',e:'station'},{t:'p',j:'まで'},{t:'w',j:'あるきました',e:'walked'},{t:'x',j:'。'}] },
+          { trans: 'Near the station there were pretty flowers.', tokens: [{t:'w',j:'えき',e:'station'},{t:'p',j:'の'},{t:'w',j:'ちかく',e:'nearby'},{t:'p',j:'に'},{t:'w',j:'きれいな',e:'pretty'},{t:'w',j:'はな',e:'flowers'},{t:'p',j:'が'},{t:'w',j:'ありました',e:'there were'},{t:'x',j:'。'}] },
+          { trans: 'He got on the train and went to town.', tokens: [{t:'w',j:'でんしゃ',e:'train'},{t:'p',j:'に'},{t:'w',j:'のって',e:'got on'},{t:'x',j:'、'},{t:'w',j:'まち',e:'town'},{t:'p',j:'へ'},{t:'w',j:'いきました',e:'went'},{t:'x',j:'。'}] },
+          { trans: 'The town was lively.', tokens: [{t:'w',j:'まち',e:'town'},{t:'p',j:'は'},{t:'w',j:'にぎやかでした',e:'was lively'},{t:'x',j:'。'}] },
+        ]
+      },
+      {
+        section: '４。カフェで',
+        sentences: [
+          { trans: 'At the café, he met his friend Sato-san.', tokens: [{t:'w',j:'カフェ',e:'café'},{t:'p',j:'で'},{t:'w',j:'ともだち',e:'friend'},{t:'p',j:'の'},{t:'w',j:'さとうさん',e:'Sato-san'},{t:'p',j:'に'},{t:'w',j:'あいました',e:'met'},{t:'x',j:'。'}] },
+          { trans: '"Hello! I\'ve been waiting," said Sato-san.', tokens: [{t:'x',j:'「'},{t:'w',j:'こんにちは',e:'hello'},{t:'x',j:'！'},{t:'w',j:'まってました',e:'was waiting'},{t:'x',j:'よ。」'},{t:'p',j:'と'},{t:'w',j:'さとうさん',e:'Sato-san'},{t:'p',j:'は'},{t:'w',j:'いいました',e:'said'},{t:'x',j:'。'}] },
+          { trans: '"Sorry, I\'m late," said Tanaka-san.', tokens: [{t:'x',j:'「'},{t:'w',j:'ごめんなさい',e:'sorry'},{t:'x',j:'、'},{t:'w',j:'おそく',e:'late'},{t:'w',j:'なりました',e:'became'},{t:'x',j:'。」'},{t:'p',j:'と'},{t:'w',j:'たなかさん',e:'Tanaka-san'},{t:'p',j:'は'},{t:'w',j:'いいました',e:'said'},{t:'x',j:'。'}] },
+          { trans: 'The two of them talked a lot while drinking coffee.', tokens: [{t:'w',j:'ふたり',e:'the two of them'},{t:'p',j:'は'},{t:'w',j:'コーヒー',e:'coffee'},{t:'p',j:'を'},{t:'w',j:'のみながら',e:'while drinking'},{t:'x',j:'、'},{t:'w',j:'たくさん',e:'a lot'},{t:'w',j:'はなしました',e:'talked'},{t:'x',j:'。'}] },
+        ]
+      },
+      {
+        section: '５。こうえんで',
+        sentences: [
+          { trans: 'After drinking coffee, the two went to the park.', tokens: [{t:'w',j:'コーヒー',e:'coffee'},{t:'p',j:'を'},{t:'w',j:'のんだあとで',e:'after drinking'},{t:'x',j:'、'},{t:'w',j:'ふたり',e:'the two'},{t:'p',j:'は'},{t:'w',j:'こうえん',e:'park'},{t:'p',j:'に'},{t:'w',j:'いきました',e:'went'},{t:'x',j:'。'}] },
+          { trans: '"It\'s pretty, isn\'t it," said Tanaka-san.', tokens: [{t:'x',j:'「'},{t:'w',j:'きれい',e:'pretty'},{t:'x',j:'ですね。」'},{t:'p',j:'と'},{t:'w',j:'たなかさん',e:'Tanaka-san'},{t:'p',j:'は'},{t:'w',j:'いいました',e:'said'},{t:'x',j:'。'}] },
+          { trans: 'They walked slowly through the park.', tokens: [{t:'w',j:'こうえん',e:'park'},{t:'p',j:'の'},{t:'w',j:'なか',e:'inside'},{t:'p',j:'を'},{t:'w',j:'ゆっくり',e:'slowly'},{t:'w',j:'あるきました',e:'walked'},{t:'x',j:'。'}] },
+          { trans: '"I want to come again," they both said.', tokens: [{t:'x',j:'「'},{t:'w',j:'また',e:'again'},{t:'w',j:'きたい',e:'want to come'},{t:'x',j:'ね。」'},{t:'p',j:'と'},{t:'w',j:'ふたり',e:'they both'},{t:'p',j:'は'},{t:'w',j:'いいました',e:'said'},{t:'x',j:'。'}] },
+        ]
+      },
+      {
+        section: '６。よる',
+        sentences: [
+          { trans: 'In the evening, Tanaka-san returned home.', tokens: [{t:'w',j:'ゆうがた',e:'evening'},{t:'p',j:'に'},{t:'w',j:'たなかさん',e:'Tanaka-san'},{t:'p',j:'は'},{t:'w',j:'うち',e:'home'},{t:'p',j:'に'},{t:'w',j:'かえりました',e:'returned'},{t:'x',j:'。'}] },
+          { trans: 'He was tired, but very happy.', tokens: [{t:'w',j:'つかれていました',e:'was tired'},{t:'x',j:'が、'},{t:'w',j:'とても',e:'very'},{t:'w',j:'うれしかった',e:'was happy'},{t:'x',j:'です。'}] },
+          { trans: 'Thinking "today was a good day," he went to sleep.', tokens: [{t:'x',j:'「'},{t:'w',j:'きょう',e:'today'},{t:'p',j:'は'},{t:'w',j:'いいひだった',e:'was a good day'},{t:'x',j:'。」'},{t:'p',j:'と'},{t:'w',j:'おもいながら',e:'while thinking'},{t:'x',j:'、'},{t:'w',j:'ねました',e:'went to sleep'},{t:'x',j:'。'}] },
+        ]
+      },
+    ]
+  },
+  {
+    id: 'restaurant',
+    title: 'レストランで',
+    titleEn: 'At the Restaurant',
+    desc: 'Yamada-san takes a colleague out for lunch at a Japanese restaurant.',
+    icon: '🍜',
+    sections: [
+      {
+        section: '１。よやく',
+        sentences: [
+          { trans: 'Yamada-san made a reservation at the restaurant.', tokens: [{t:'w',j:'やまださん',e:'Yamada-san'},{t:'p',j:'は'},{t:'w',j:'レストラン',e:'restaurant'},{t:'p',j:'に'},{t:'w',j:'よやく',e:'reservation'},{t:'p',j:'を'},{t:'w',j:'しました',e:'made'},{t:'x',j:'。'}] },
+          { trans: 'The restaurant was near the station.', tokens: [{t:'w',j:'レストラン',e:'restaurant'},{t:'p',j:'は'},{t:'w',j:'えき',e:'station'},{t:'p',j:'の'},{t:'w',j:'ちかく',e:'nearby'},{t:'p',j:'に'},{t:'w',j:'ありました',e:'was located'},{t:'x',j:'。'}] },
+          { trans: 'It was popular and always busy.', tokens: [{t:'w',j:'にんき',e:'popular'},{t:'p',j:'で'},{t:'x',j:'、'},{t:'w',j:'いつも',e:'always'},{t:'w',j:'にぎやか',e:'lively'},{t:'x',j:'でした。'}] },
+        ]
+      },
+      {
+        section: '２。ちゅうもん',
+        sentences: [
+          { trans: 'Yamada-san and her colleague sat down and looked at the menu.', tokens: [{t:'w',j:'やまださん',e:'Yamada-san'},{t:'p',j:'と'},{t:'w',j:'どうりょう',e:'colleague'},{t:'p',j:'は'},{t:'w',j:'すわって',e:'sat down'},{t:'x',j:'、'},{t:'w',j:'メニュー',e:'menu'},{t:'p',j:'を'},{t:'w',j:'みました',e:'looked at'},{t:'x',j:'。'}] },
+          { trans: '"What will you have?" asked Yamada-san.', tokens: [{t:'x',j:'「'},{t:'w',j:'なに',e:'what'},{t:'p',j:'に'},{t:'w',j:'しますか',e:'will you have'},{t:'x',j:'？」'},{t:'p',j:'と'},{t:'w',j:'やまださん',e:'Yamada-san'},{t:'p',j:'は'},{t:'w',j:'ききました',e:'asked'},{t:'x',j:'。'}] },
+          { trans: '"I\'ll have the ramen please," said her colleague.', tokens: [{t:'x',j:'「'},{t:'w',j:'ラーメン',e:'ramen'},{t:'p',j:'に'},{t:'w',j:'します',e:'I\'ll have'},{t:'x',j:'。」'},{t:'p',j:'と'},{t:'w',j:'どうりょう',e:'colleague'},{t:'p',j:'は'},{t:'w',j:'こたえました',e:'replied'},{t:'x',j:'。'}] },
+          { trans: 'Yamada-san ordered the set meal.', tokens: [{t:'w',j:'やまださん',e:'Yamada-san'},{t:'p',j:'は'},{t:'w',j:'ていしょく',e:'set meal'},{t:'p',j:'を'},{t:'w',j:'ちゅうもんしました',e:'ordered'},{t:'x',j:'。'}] },
+        ]
+      },
+      {
+        section: '３。しょくじ',
+        sentences: [
+          { trans: 'The food arrived quickly.', tokens: [{t:'w',j:'りょうり',e:'food'},{t:'p',j:'は'},{t:'w',j:'はやく',e:'quickly'},{t:'w',j:'きました',e:'arrived'},{t:'x',j:'。'}] },
+          { trans: '"It looks delicious!" said her colleague.', tokens: [{t:'x',j:'「'},{t:'w',j:'おいしそう',e:'looks delicious'},{t:'x',j:'！」'},{t:'p',j:'と'},{t:'w',j:'どうりょう',e:'colleague'},{t:'p',j:'は'},{t:'w',j:'いいました',e:'said'},{t:'x',j:'。'}] },
+          { trans: 'The two of them ate and talked about work.', tokens: [{t:'w',j:'ふたり',e:'the two'},{t:'p',j:'は'},{t:'w',j:'たべながら',e:'while eating'},{t:'x',j:'、'},{t:'w',j:'しごと',e:'work'},{t:'p',j:'の'},{t:'w',j:'はなし',e:'talk'},{t:'p',j:'を'},{t:'w',j:'しました',e:'had'},{t:'x',j:'。'}] },
+          { trans: 'The food was very delicious.', tokens: [{t:'w',j:'りょうり',e:'food'},{t:'p',j:'は'},{t:'w',j:'とても',e:'very'},{t:'w',j:'おいしかった',e:'was delicious'},{t:'x',j:'です。'}] },
+        ]
+      },
+      {
+        section: '４。おかいけい',
+        sentences: [
+          { trans: 'After eating, Yamada-san called the staff.', tokens: [{t:'w',j:'たべたあとで',e:'after eating'},{t:'x',j:'、'},{t:'w',j:'やまださん',e:'Yamada-san'},{t:'p',j:'は'},{t:'w',j:'スタッフ',e:'staff'},{t:'p',j:'を'},{t:'w',j:'よびました',e:'called'},{t:'x',j:'。'}] },
+          { trans: '"The bill please," she said.', tokens: [{t:'x',j:'「'},{t:'w',j:'おかいけい',e:'the bill'},{t:'p',j:'を'},{t:'w',j:'おねがいします',e:'please'},{t:'x',j:'。」'},{t:'p',j:'と'},{t:'w',j:'いいました',e:'said'},{t:'x',j:'。'}] },
+          { trans: '"Let\'s come again," her colleague said happily.', tokens: [{t:'x',j:'「'},{t:'w',j:'また',e:'again'},{t:'w',j:'きましょう',e:'let\'s come'},{t:'x',j:'ね。」'},{t:'p',j:'と'},{t:'w',j:'どうりょう',e:'colleague'},{t:'p',j:'は'},{t:'w',j:'うれしそうに',e:'happily'},{t:'w',j:'いいました',e:'said'},{t:'x',j:'。'}] },
+        ]
+      },
+    ]
+  },
+  {
+    id: 'train-journey',
+    title: 'でんしゃのたび',
+    titleEn: 'The Train Journey',
+    desc: 'Keiko takes the shinkansen to visit her grandmother in Kyoto.',
+    icon: '🚄',
+    sections: [
+      {
+        section: '１。えきで',
+        sentences: [
+          { trans: 'Keiko arrived early at the station.', tokens: [{t:'w',j:'けいこさん',e:'Keiko'},{t:'p',j:'は'},{t:'w',j:'はやく',e:'early'},{t:'w',j:'えき',e:'station'},{t:'p',j:'に'},{t:'w',j:'つきました',e:'arrived'},{t:'x',j:'。'}] },
+          { trans: 'She bought a ticket for the shinkansen.', tokens: [{t:'w',j:'しんかんせん',e:'shinkansen'},{t:'p',j:'の'},{t:'w',j:'きっぷ',e:'ticket'},{t:'p',j:'を'},{t:'w',j:'かいました',e:'bought'},{t:'x',j:'。'}] },
+          { trans: 'The platform was very crowded.', tokens: [{t:'w',j:'ホーム',e:'platform'},{t:'p',j:'は'},{t:'w',j:'とても',e:'very'},{t:'w',j:'こんでいました',e:'was crowded'},{t:'x',j:'。'}] },
+        ]
+      },
+      {
+        section: '２。しんかんせんの中',
+        sentences: [
+          { trans: 'Keiko sat down and looked out the window.', tokens: [{t:'w',j:'けいこさん',e:'Keiko'},{t:'p',j:'は'},{t:'w',j:'すわって',e:'sat down'},{t:'x',j:'、'},{t:'w',j:'まど',e:'window'},{t:'p',j:'の'},{t:'w',j:'そと',e:'outside'},{t:'p',j:'を'},{t:'w',j:'みました',e:'looked at'},{t:'x',j:'。'}] },
+          { trans: 'Mountains and towns passed quickly.', tokens: [{t:'w',j:'やま',e:'mountains'},{t:'p',j:'と'},{t:'w',j:'まち',e:'towns'},{t:'p',j:'が'},{t:'w',j:'はやく',e:'quickly'},{t:'w',j:'すぎました',e:'passed'},{t:'x',j:'。'}] },
+          { trans: 'She drank tea and read a book.', tokens: [{t:'w',j:'おちゃ',e:'tea'},{t:'p',j:'を'},{t:'w',j:'のみながら',e:'while drinking'},{t:'x',j:'、'},{t:'w',j:'ほん',e:'book'},{t:'p',j:'を'},{t:'w',j:'よみました',e:'read'},{t:'x',j:'。'}] },
+        ]
+      },
+      {
+        section: '３。きょうとで',
+        sentences: [
+          { trans: 'The shinkansen arrived at Kyoto station.', tokens: [{t:'w',j:'しんかんせん',e:'shinkansen'},{t:'p',j:'は'},{t:'w',j:'きょうとえき',e:'Kyoto station'},{t:'p',j:'に'},{t:'w',j:'つきました',e:'arrived'},{t:'x',j:'。'}] },
+          { trans: 'Her grandmother was waiting at the exit.', tokens: [{t:'w',j:'おばあさん',e:'grandmother'},{t:'p',j:'が'},{t:'w',j:'でぐち',e:'exit'},{t:'p',j:'で'},{t:'w',j:'まっていました',e:'was waiting'},{t:'x',j:'。'}] },
+          { trans: '"Keiko! Welcome," her grandmother said with a smile.', tokens: [{t:'x',j:'「'},{t:'w',j:'けいこちゃん',e:'Keiko'},{t:'x',j:'！'},{t:'w',j:'よくきたね',e:'welcome'},{t:'x',j:'。」'},{t:'p',j:'と'},{t:'w',j:'おばあさん',e:'grandmother'},{t:'p',j:'は'},{t:'w',j:'わらいながら',e:'with a smile'},{t:'w',j:'いいました',e:'said'},{t:'x',j:'。'}] },
+          { trans: 'Keiko was very happy.', tokens: [{t:'w',j:'けいこさん',e:'Keiko'},{t:'p',j:'は'},{t:'w',j:'とても',e:'very'},{t:'w',j:'うれしかった',e:'was happy'},{t:'x',j:'です。'}] },
+        ]
+      },
+    ]
+  },
+  {
+    id: 'shopping',
+    title: 'かいもの',
+    titleEn: 'Shopping Day',
+    desc: 'Mika goes shopping for new clothes in the city.',
+    icon: '🛍',
+    sections: [
+      {
+        section: '１。デパートへ',
+        sentences: [
+          { trans: 'On Saturday, Mika went to the department store.', tokens: [{t:'w',j:'どようび',e:'Saturday'},{t:'p',j:'に'},{t:'w',j:'みかさん',e:'Mika'},{t:'p',j:'は'},{t:'w',j:'デパート',e:'department store'},{t:'p',j:'へ'},{t:'w',j:'いきました',e:'went'},{t:'x',j:'。'}] },
+          { trans: 'She wanted to buy new clothes.', tokens: [{t:'w',j:'あたらしい',e:'new'},{t:'w',j:'ふく',e:'clothes'},{t:'p',j:'を'},{t:'w',j:'かいたかった',e:'wanted to buy'},{t:'x',j:'です。'}] },
+          { trans: 'The store was big and beautiful.', tokens: [{t:'w',j:'みせ',e:'store'},{t:'p',j:'は'},{t:'w',j:'おおきくて',e:'big'},{t:'w',j:'きれい',e:'beautiful'},{t:'x',j:'でした。'}] },
+        ]
+      },
+      {
+        section: '２。ふくをさがす',
+        sentences: [
+          { trans: 'Mika looked at many clothes.', tokens: [{t:'w',j:'みかさん',e:'Mika'},{t:'p',j:'は'},{t:'w',j:'たくさんの',e:'many'},{t:'w',j:'ふく',e:'clothes'},{t:'p',j:'を'},{t:'w',j:'みました',e:'looked at'},{t:'x',j:'。'}] },
+          { trans: 'She found a pretty blue jacket.', tokens: [{t:'w',j:'きれいな',e:'pretty'},{t:'w',j:'あおい',e:'blue'},{t:'w',j:'ジャケット',e:'jacket'},{t:'p',j:'を'},{t:'w',j:'みつけました',e:'found'},{t:'x',j:'。'}] },
+          { trans: '"How much is this?" she asked the shop assistant.', tokens: [{t:'x',j:'「'},{t:'w',j:'これ',e:'this'},{t:'p',j:'は'},{t:'w',j:'いくらですか',e:'how much is it'},{t:'x',j:'？」'},{t:'p',j:'と'},{t:'w',j:'てんいん',e:'shop assistant'},{t:'p',j:'に'},{t:'w',j:'ききました',e:'asked'},{t:'x',j:'。'}] },
+          { trans: '"It\'s eight thousand yen," the assistant replied.', tokens: [{t:'x',j:'「'},{t:'w',j:'はっせんえん',e:'eight thousand yen'},{t:'x',j:'です。」'},{t:'p',j:'と'},{t:'w',j:'てんいん',e:'assistant'},{t:'p',j:'は'},{t:'w',j:'こたえました',e:'replied'},{t:'x',j:'。'}] },
+        ]
+      },
+      {
+        section: '３。かいもの終わり',
+        sentences: [
+          { trans: 'Mika bought the jacket.', tokens: [{t:'w',j:'みかさん',e:'Mika'},{t:'p',j:'は'},{t:'w',j:'ジャケット',e:'jacket'},{t:'p',j:'を'},{t:'w',j:'かいました',e:'bought'},{t:'x',j:'。'}] },
+          { trans: 'She also bought shoes.', tokens: [{t:'w',j:'くつ',e:'shoes'},{t:'p',j:'も'},{t:'w',j:'かいました',e:'bought'},{t:'x',j:'。'}] },
+          { trans: 'She was tired but very happy.', tokens: [{t:'w',j:'つかれました',e:'was tired'},{t:'p',j:'が'},{t:'x',j:'、'},{t:'w',j:'とても',e:'very'},{t:'w',j:'うれしかった',e:'was happy'},{t:'x',j:'です。'}] },
+        ]
+      },
+    ]
+  },
+  {
+    id: 'rainy-day',
+    title: 'あめのひ',
+    titleEn: 'A Rainy Day',
+    desc: 'Sato-san stays home on a rainy day and enjoys a quiet afternoon.',
+    icon: '🌧',
+    sections: [
+      {
+        section: '１。あさから あめ',
+        sentences: [
+          { trans: 'From the morning it was raining.', tokens: [{t:'w',j:'あさ',e:'morning'},{t:'p',j:'から'},{t:'w',j:'あめ',e:'rain'},{t:'p',j:'が'},{t:'w',j:'ふっていました',e:'was raining'},{t:'x',j:'。'}] },
+          { trans: 'Sato-san looked outside from the window.', tokens: [{t:'w',j:'さとうさん',e:'Sato-san'},{t:'p',j:'は'},{t:'w',j:'まど',e:'window'},{t:'p',j:'から'},{t:'w',j:'そと',e:'outside'},{t:'p',j:'を'},{t:'w',j:'みました',e:'looked at'},{t:'x',j:'。'}] },
+          { trans: '"Today I\'ll stay home," he decided.', tokens: [{t:'x',j:'「'},{t:'w',j:'きょう',e:'today'},{t:'p',j:'は'},{t:'w',j:'うち',e:'home'},{t:'p',j:'に'},{t:'w',j:'いよう',e:'I\'ll stay'},{t:'x',j:'。」'},{t:'p',j:'と'},{t:'w',j:'きめました',e:'decided'},{t:'x',j:'。'}] },
+        ]
+      },
+      {
+        section: '２。うちでのんびり',
+        sentences: [
+          { trans: 'He made tea and read a book.', tokens: [{t:'w',j:'おちゃ',e:'tea'},{t:'p',j:'を'},{t:'w',j:'いれて',e:'made'},{t:'x',j:'、'},{t:'w',j:'ほん',e:'book'},{t:'p',j:'を'},{t:'w',j:'よみました',e:'read'},{t:'x',j:'。'}] },
+          { trans: 'The sound of the rain was quiet and calming.', tokens: [{t:'w',j:'あめ',e:'rain'},{t:'p',j:'の'},{t:'w',j:'おと',e:'sound'},{t:'p',j:'は'},{t:'w',j:'しずかで',e:'quiet'},{t:'x',j:'、'},{t:'w',j:'きもちよかった',e:'felt good'},{t:'x',j:'です。'}] },
+          { trans: 'In the afternoon he listened to music.', tokens: [{t:'w',j:'ごご',e:'afternoon'},{t:'p',j:'は'},{t:'w',j:'おんがく',e:'music'},{t:'p',j:'を'},{t:'w',j:'ききました',e:'listened to'},{t:'x',j:'。'}] },
+          { trans: 'It was a slow, pleasant day.', tokens: [{t:'w',j:'ゆっくりした',e:'slow'},{t:'x',j:'、'},{t:'w',j:'いいひ',e:'good day'},{t:'x',j:'でした。'}] },
+        ]
+      },
+    ]
+  },
+  {
+    id: 'cooking',
+    title: 'りょうりをつくる',
+    titleEn: 'Cooking at Home',
+    desc: 'Hana tries to cook curry for the first time.',
+    icon: '🍛',
+    sections: [
+      {
+        section: '１。じゅんび',
+        sentences: [
+          { trans: 'Hana decided to cook curry today.', tokens: [{t:'w',j:'はなさん',e:'Hana'},{t:'p',j:'は'},{t:'w',j:'きょう',e:'today'},{t:'w',j:'カレー',e:'curry'},{t:'p',j:'を'},{t:'w',j:'つくることにしました',e:'decided to cook'},{t:'x',j:'。'}] },
+          { trans: 'She bought vegetables and meat at the supermarket.', tokens: [{t:'w',j:'スーパー',e:'supermarket'},{t:'p',j:'で'},{t:'w',j:'やさい',e:'vegetables'},{t:'p',j:'と'},{t:'w',j:'にく',e:'meat'},{t:'p',j:'を'},{t:'w',j:'かいました',e:'bought'},{t:'x',j:'。'}] },
+          { trans: 'She also bought a curry roux.', tokens: [{t:'w',j:'カレールー',e:'curry roux'},{t:'p',j:'も'},{t:'w',j:'かいました',e:'bought'},{t:'x',j:'。'}] },
+        ]
+      },
+      {
+        section: '２。りょうり',
+        sentences: [
+          { trans: 'First she cut the vegetables.', tokens: [{t:'w',j:'まず',e:'first'},{t:'w',j:'やさい',e:'vegetables'},{t:'p',j:'を'},{t:'w',j:'きりました',e:'cut'},{t:'x',j:'。'}] },
+          { trans: 'Next she cooked the meat.', tokens: [{t:'w',j:'つぎに',e:'next'},{t:'w',j:'にく',e:'meat'},{t:'p',j:'を'},{t:'w',j:'いためました',e:'cooked'},{t:'x',j:'。'}] },
+          { trans: 'She put everything in the pot and boiled it.', tokens: [{t:'w',j:'ぜんぶ',e:'everything'},{t:'w',j:'なべ',e:'pot'},{t:'p',j:'に'},{t:'w',j:'いれて',e:'put in'},{t:'x',j:'、'},{t:'w',j:'にました',e:'boiled'},{t:'x',j:'。'}] },
+          { trans: 'The smell was very good.', tokens: [{t:'w',j:'においが',e:'the smell'},{t:'w',j:'とても',e:'very'},{t:'w',j:'よかった',e:'was good'},{t:'x',j:'です。'}] },
+        ]
+      },
+      {
+        section: '３。できあがり',
+        sentences: [
+          { trans: 'The curry was done.', tokens: [{t:'w',j:'カレー',e:'curry'},{t:'p',j:'が'},{t:'w',j:'できました',e:'was done'},{t:'x',j:'。'}] },
+          { trans: 'Hana ate it and smiled.', tokens: [{t:'w',j:'はなさん',e:'Hana'},{t:'p',j:'は'},{t:'w',j:'たべて',e:'ate'},{t:'x',j:'、'},{t:'w',j:'わらいました',e:'smiled'},{t:'x',j:'。'}] },
+          { trans: '"I made it myself — it\'s delicious!"', tokens: [{t:'x',j:'「'},{t:'w',j:'じぶんで',e:'myself'},{t:'w',j:'つくった',e:'made'},{t:'x',j:'— '},{t:'w',j:'おいしい',e:'delicious'},{t:'x',j:'！」'}] },
+          { trans: 'Next time she wants to try making sushi.', tokens: [{t:'w',j:'つぎは',e:'next time'},{t:'w',j:'すし',e:'sushi'},{t:'p',j:'を'},{t:'w',j:'つくってみたい',e:'wants to try making'},{t:'x',j:'です。'}] },
+        ]
+      },
+    ]
+  },
+  {
+    id: 'summer-festival',
+    title: 'なつまつり',
+    titleEn: 'Summer Festival',
+    desc: 'Friends enjoy a lively summer festival with food stalls and fireworks.',
+    icon: '🎆',
+    sections: [
+      {
+        section: '１。まつりへ',
+        sentences: [
+          { trans: 'In summer there was a festival in the town.', tokens: [{t:'w',j:'なつ',e:'summer'},{t:'p',j:'に'},{t:'x',j:'、'},{t:'w',j:'まち',e:'town'},{t:'p',j:'で'},{t:'w',j:'まつり',e:'festival'},{t:'p',j:'が'},{t:'w',j:'ありました',e:'there was'},{t:'x',j:'。'}] },
+          { trans: 'Ryo and his friends went together.', tokens: [{t:'w',j:'りょうさん',e:'Ryo'},{t:'p',j:'は'},{t:'w',j:'ともだち',e:'friends'},{t:'p',j:'と'},{t:'w',j:'いっしょに',e:'together'},{t:'w',j:'いきました',e:'went'},{t:'x',j:'。'}] },
+          { trans: 'Everyone was wearing a yukata.', tokens: [{t:'w',j:'みんな',e:'everyone'},{t:'p',j:'は'},{t:'w',j:'ゆかた',e:'yukata'},{t:'p',j:'を'},{t:'w',j:'きていました',e:'was wearing'},{t:'x',j:'。'}] },
+        ]
+      },
+      {
+        section: '２。たべもの',
+        sentences: [
+          { trans: 'There were many food stalls.', tokens: [{t:'w',j:'たべもの',e:'food'},{t:'p',j:'の'},{t:'w',j:'みせ',e:'stalls'},{t:'p',j:'が'},{t:'w',j:'たくさん',e:'many'},{t:'w',j:'ありました',e:'there were'},{t:'x',j:'。'}] },
+          { trans: 'They ate yakitori and drank cold beer.', tokens: [{t:'w',j:'やきとり',e:'yakitori'},{t:'p',j:'を'},{t:'w',j:'たべて',e:'ate'},{t:'x',j:'、'},{t:'w',j:'つめたい',e:'cold'},{t:'w',j:'ビール',e:'beer'},{t:'p',j:'を'},{t:'w',j:'のみました',e:'drank'},{t:'x',j:'。'}] },
+          { trans: '"This is so good!" Ryo said happily.', tokens: [{t:'x',j:'「'},{t:'w',j:'これ',e:'this'},{t:'p',j:'は'},{t:'w',j:'さいこう',e:'the best'},{t:'x',j:'！」'},{t:'p',j:'と'},{t:'w',j:'りょうさん',e:'Ryo'},{t:'p',j:'は'},{t:'w',j:'うれしそうに',e:'happily'},{t:'w',j:'いいました',e:'said'},{t:'x',j:'。'}] },
+        ]
+      },
+      {
+        section: '３。はなび',
+        sentences: [
+          { trans: 'At night the fireworks started.', tokens: [{t:'w',j:'よる',e:'night'},{t:'p',j:'に'},{t:'x',j:'、'},{t:'w',j:'はなび',e:'fireworks'},{t:'p',j:'が'},{t:'w',j:'はじまりました',e:'started'},{t:'x',j:'。'}] },
+          { trans: 'The sky became bright and beautiful.', tokens: [{t:'w',j:'そら',e:'sky'},{t:'p',j:'が'},{t:'w',j:'あかるく',e:'bright'},{t:'x',j:'、'},{t:'w',j:'きれいに',e:'beautifully'},{t:'w',j:'なりました',e:'became'},{t:'x',j:'。'}] },
+          { trans: '"Amazing!" everyone shouted together.', tokens: [{t:'x',j:'「'},{t:'w',j:'すごい',e:'amazing'},{t:'x',j:'！」'},{t:'p',j:'と'},{t:'w',j:'みんな',e:'everyone'},{t:'p',j:'は'},{t:'w',j:'いっしょに',e:'together'},{t:'w',j:'さけびました',e:'shouted'},{t:'x',j:'。'}] },
+          { trans: 'It was the best summer memory.', tokens: [{t:'w',j:'いちばんいい',e:'the best'},{t:'w',j:'なつ',e:'summer'},{t:'p',j:'の'},{t:'w',j:'おもいで',e:'memory'},{t:'x',j:'でした。'}] },
+        ]
+      },
+    ]
+  },
+  {
+    id: 'library',
+    title: 'としょかんで',
+    titleEn: 'At the Library',
+    desc: 'Nori studies at the library and makes an unexpected new friend.',
+    icon: '📚',
+    sections: [
+      {
+        section: '１。としょかんへ',
+        sentences: [
+          { trans: 'Nori went to the library to study.', tokens: [{t:'w',j:'のりさん',e:'Nori'},{t:'p',j:'は'},{t:'w',j:'べんきょう',e:'study'},{t:'p',j:'するために'},{t:'w',j:'としょかん',e:'library'},{t:'p',j:'へ'},{t:'w',j:'いきました',e:'went'},{t:'x',j:'。'}] },
+          { trans: 'The library was quiet and cool.', tokens: [{t:'w',j:'としょかん',e:'library'},{t:'p',j:'は'},{t:'w',j:'しずかで',e:'quiet'},{t:'x',j:'、'},{t:'w',j:'すずしかった',e:'was cool'},{t:'x',j:'です。'}] },
+          { trans: 'She found a good seat near the window.', tokens: [{t:'w',j:'まど',e:'window'},{t:'p',j:'の'},{t:'w',j:'ちかく',e:'near'},{t:'p',j:'の'},{t:'w',j:'いいせき',e:'good seat'},{t:'p',j:'を'},{t:'w',j:'みつけました',e:'found'},{t:'x',j:'。'}] },
+        ]
+      },
+      {
+        section: '２。べんきょう',
+        sentences: [
+          { trans: 'Nori opened her textbook and began to study.', tokens: [{t:'w',j:'のりさん',e:'Nori'},{t:'p',j:'は'},{t:'w',j:'テキスト',e:'textbook'},{t:'p',j:'を'},{t:'w',j:'あけて',e:'opened'},{t:'x',j:'、'},{t:'w',j:'べんきょうをはじめました',e:'began to study'},{t:'x',j:'。'}] },
+          { trans: 'After a while, the person next to her spoke.', tokens: [{t:'w',j:'しばらくして',e:'after a while'},{t:'x',j:'、'},{t:'w',j:'となりのひと',e:'person next to her'},{t:'p',j:'が'},{t:'w',j:'はなしかけました',e:'spoke to her'},{t:'x',j:'。'}] },
+          { trans: '"Excuse me, is this seat taken?"', tokens: [{t:'x',j:'「'},{t:'w',j:'すみません',e:'excuse me'},{t:'x',j:'、'},{t:'w',j:'ここ',e:'here'},{t:'p',j:'は'},{t:'w',j:'あいていますか',e:'is it free'},{t:'x',j:'？」'}] },
+        ]
+      },
+      {
+        section: '３。あたらしいともだち',
+        sentences: [
+          { trans: '"Yes, please go ahead," Nori said with a smile.', tokens: [{t:'x',j:'「'},{t:'w',j:'はい',e:'yes'},{t:'x',j:'、'},{t:'w',j:'どうぞ',e:'please go ahead'},{t:'x',j:'。」'},{t:'p',j:'と'},{t:'w',j:'のりさん',e:'Nori'},{t:'p',j:'は'},{t:'w',j:'わらいながら',e:'with a smile'},{t:'w',j:'いいました',e:'said'},{t:'x',j:'。'}] },
+          { trans: 'The two studied together until evening.', tokens: [{t:'w',j:'ふたり',e:'the two'},{t:'p',j:'は'},{t:'w',j:'ゆうがた',e:'evening'},{t:'p',j:'まで'},{t:'w',j:'いっしょに',e:'together'},{t:'w',j:'べんきょうしました',e:'studied'},{t:'x',j:'。'}] },
+          { trans: 'They exchanged numbers and became friends.', tokens: [{t:'w',j:'れんらくさき',e:'contact details'},{t:'p',j:'を'},{t:'w',j:'こうかんして',e:'exchanged'},{t:'x',j:'、'},{t:'w',j:'ともだち',e:'friends'},{t:'p',j:'に'},{t:'w',j:'なりました',e:'became'},{t:'x',j:'。'}] },
+        ]
+      },
+    ]
+  },
+  {
+    id: 'morning-run',
+    title: 'あさのランニング',
+    titleEn: 'Morning Run',
+    desc: 'Ken starts a new habit of running every morning.',
+    icon: '🏃',
+    sections: [
+      {
+        section: '１。はじめてのランニング',
+        sentences: [
+          { trans: 'Ken decided to start running every morning.', tokens: [{t:'w',j:'けんさん',e:'Ken'},{t:'p',j:'は'},{t:'w',j:'まいあさ',e:'every morning'},{t:'w',j:'ランニング',e:'running'},{t:'p',j:'を'},{t:'w',j:'はじめることにしました',e:'decided to start'},{t:'x',j:'。'}] },
+          { trans: 'He woke up early and put on his shoes.', tokens: [{t:'w',j:'はやく',e:'early'},{t:'w',j:'おきて',e:'woke up'},{t:'x',j:'、'},{t:'w',j:'くつ',e:'shoes'},{t:'p',j:'を'},{t:'w',j:'はきました',e:'put on'},{t:'x',j:'。'}] },
+          { trans: 'Outside the air was fresh and cool.', tokens: [{t:'w',j:'そと',e:'outside'},{t:'p',j:'の'},{t:'w',j:'くうき',e:'air'},{t:'p',j:'は'},{t:'w',j:'しんせんで',e:'fresh'},{t:'w',j:'すずしかった',e:'was cool'},{t:'x',j:'です。'}] },
+        ]
+      },
+      {
+        section: '２。こうえんで',
+        sentences: [
+          { trans: 'Ken ran through the park.', tokens: [{t:'w',j:'けんさん',e:'Ken'},{t:'p',j:'は'},{t:'w',j:'こうえん',e:'park'},{t:'p',j:'の'},{t:'w',j:'なか',e:'through'},{t:'p',j:'を'},{t:'w',j:'はしりました',e:'ran'},{t:'x',j:'。'}] },
+          { trans: 'There were flowers and birds.', tokens: [{t:'w',j:'はな',e:'flowers'},{t:'p',j:'と'},{t:'w',j:'とり',e:'birds'},{t:'p',j:'が'},{t:'w',j:'いました',e:'there were'},{t:'x',j:'。'}] },
+          { trans: 'It was a little hard but felt good.', tokens: [{t:'w',j:'すこし',e:'a little'},{t:'w',j:'たいへんでした',e:'was hard'},{t:'p',j:'が'},{t:'x',j:'、'},{t:'w',j:'きもちよかった',e:'felt good'},{t:'x',j:'です。'}] },
+        ]
+      },
+      {
+        section: '３。まいにちのしゅうかん',
+        sentences: [
+          { trans: 'After one month, running became a habit.', tokens: [{t:'w',j:'いっかげつ',e:'one month'},{t:'p',j:'が'},{t:'w',j:'たって',e:'passed'},{t:'x',j:'、'},{t:'w',j:'ランニング',e:'running'},{t:'p',j:'が'},{t:'w',j:'しゅうかん',e:'habit'},{t:'p',j:'に'},{t:'w',j:'なりました',e:'became'},{t:'x',j:'。'}] },
+          { trans: 'Ken became healthy and energetic.', tokens: [{t:'w',j:'けんさん',e:'Ken'},{t:'p',j:'は'},{t:'w',j:'けんこうに',e:'healthy'},{t:'x',j:'、'},{t:'w',j:'げんきに',e:'energetic'},{t:'w',j:'なりました',e:'became'},{t:'x',j:'。'}] },
+          { trans: '"I want to keep running tomorrow too," he thought.', tokens: [{t:'x',j:'「'},{t:'w',j:'あした',e:'tomorrow'},{t:'p',j:'も'},{t:'w',j:'つづけたい',e:'want to keep going'},{t:'x',j:'。」'},{t:'p',j:'と'},{t:'w',j:'おもいました',e:'thought'},{t:'x',j:'。'}] },
+        ]
+      },
+    ]
+  },
+  {
+    id: 'new-job',
+    title: 'あたらしいしごと',
+    titleEn: 'The New Job',
+    desc: 'Aoi starts her first day at a new company and meets her team.',
+    icon: '💼',
+    sections: [
+      {
+        section: '１。はじめての日',
+        sentences: [
+          { trans: 'Today was Aoi\'s first day at her new job.', tokens: [{t:'w',j:'きょう',e:'today'},{t:'p',j:'は'},{t:'w',j:'あおいさん',e:'Aoi'},{t:'p',j:'の'},{t:'w',j:'あたらしいしごと',e:'new job'},{t:'p',j:'の'},{t:'w',j:'はじめての日',e:'first day'},{t:'x',j:'でした。'}] },
+          { trans: 'She was a little nervous.', tokens: [{t:'w',j:'すこし',e:'a little'},{t:'w',j:'きんちょうしていました',e:'was nervous'},{t:'x',j:'。'}] },
+          { trans: 'She arrived at the office early.', tokens: [{t:'w',j:'はやく',e:'early'},{t:'w',j:'オフィス',e:'office'},{t:'p',j:'に'},{t:'w',j:'つきました',e:'arrived'},{t:'x',j:'。'}] },
+        ]
+      },
+      {
+        section: '２。じこしょうかい',
+        sentences: [
+          { trans: 'Her boss introduced her to the team.', tokens: [{t:'w',j:'じょうし',e:'boss'},{t:'p',j:'が'},{t:'w',j:'チーム',e:'team'},{t:'p',j:'に'},{t:'w',j:'しょうかいしました',e:'introduced'},{t:'x',j:'。'}] },
+          { trans: '"My name is Aoi. Nice to meet you all," she said.', tokens: [{t:'x',j:'「'},{t:'w',j:'あおい',e:'Aoi'},{t:'x',j:'です。'},{t:'w',j:'よろしくおねがいします',e:'nice to meet you'},{t:'x',j:'。」'},{t:'p',j:'と'},{t:'w',j:'いいました',e:'said'},{t:'x',j:'。'}] },
+          { trans: 'Everyone welcomed her warmly.', tokens: [{t:'w',j:'みんな',e:'everyone'},{t:'p',j:'は'},{t:'w',j:'あたたかく',e:'warmly'},{t:'w',j:'むかえてくれました',e:'welcomed her'},{t:'x',j:'。'}] },
+        ]
+      },
+      {
+        section: '３。さいしょのしごと',
+        sentences: [
+          { trans: 'Her colleague taught her the work.', tokens: [{t:'w',j:'どうりょう',e:'colleague'},{t:'p',j:'が'},{t:'w',j:'しごと',e:'work'},{t:'p',j:'を'},{t:'w',j:'おしえてくれました',e:'taught her'},{t:'x',j:'。'}] },
+          { trans: 'It was difficult, but Aoi worked hard.', tokens: [{t:'w',j:'むずかしかった',e:'was difficult'},{t:'p',j:'が'},{t:'x',j:'、'},{t:'w',j:'あおいさん',e:'Aoi'},{t:'p',j:'は'},{t:'w',j:'がんばりました',e:'worked hard'},{t:'x',j:'。'}] },
+          { trans: '"I can do this," she thought and smiled.', tokens: [{t:'x',j:'「'},{t:'w',j:'できる',e:'I can do this'},{t:'x',j:'。」'},{t:'p',j:'と'},{t:'w',j:'おもって',e:'thinking'},{t:'x',j:'、'},{t:'w',j:'わらいました',e:'smiled'},{t:'x',j:'。'}] },
+        ]
+      },
+    ]
+  },
+];
 
-const STORY = [
+// Keep STORY pointing at current active story for speech engine compatibility
+let STORY = STORIES[0].sections;
+let activeStoryId = null;
   {
     section: '１。あさ',
     sentences: [
@@ -2014,9 +2496,147 @@ function stopEchoMode() {
 // Stop speech when navigating away from read page
 const _origShowPage = showPage;
 window.showPage = function(name) {
-  if (name !== 'read') { stopReadAloud(); stopEchoMode(); }
+  if (name !== 'read' && name !== 'read-picker') { stopReadAloud(); stopEchoMode(); }
+  if (name === 'read-picker') {
+    // Show picker page, update nav tab
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('page-read-picker').classList.add('active');
+    document.querySelector('.nav-tab[data-page="read-picker"]').classList.add('active');
+    renderPicker();
+    return;
+  }
   _origShowPage(name);
 };
+
+// ═══════════════════════════════════════
+// STORY PICKER & LIBRARY
+// ═══════════════════════════════════════
+
+function getStoryState() {
+  try { return JSON.parse(localStorage.getItem('story_state') || '{}'); } catch(e) { return {}; }
+}
+function saveStoryState(s) { localStorage.setItem('story_state', JSON.stringify(s)); }
+function getFavs() {
+  try { return JSON.parse(localStorage.getItem('story_favs') || '[]'); } catch(e) { return []; }
+}
+function saveFavs(f) { localStorage.setItem('story_favs', JSON.stringify(f)); }
+function getStoryStatus(id) { return getStoryState()[id] || 'unread'; }
+function setStoryStatus(id, status) { const s = getStoryState(); s[id] = status; saveStoryState(s); }
+function isFav(id) { return getFavs().includes(id); }
+function toggleFav(id) {
+  let favs = getFavs();
+  favs = favs.includes(id) ? favs.filter(f => f !== id) : [...favs, id];
+  saveFavs(favs);
+}
+
+function badgeHTML(status) {
+  if (status === 'done')     return '<span class="story-status-badge badge-done">✓ Done</span>';
+  if (status === 'progress') return '<span class="story-status-badge badge-progress">● Reading</span>';
+  return '<span class="story-status-badge badge-unread">Unread</span>';
+}
+
+function makeStoryCard(story, showRemoveFav) {
+  const status  = getStoryStatus(story.id);
+  const starred = isFav(story.id);
+  const card = document.createElement('div');
+  card.className = 'story-card' + (status === 'done' ? ' completed' : '');
+  card.innerHTML = `
+    ${status === 'done' ? '<div class="story-completed-stamp">✓</div>' : ''}
+    <div class="story-card-top">
+      <div class="story-card-title">${story.icon} ${story.title}</div>
+      <div class="story-card-actions">
+        ${badgeHTML(status)}
+        <button class="story-fav-btn ${starred ? 'active' : ''}" data-id="${story.id}" title="${starred ? 'Remove favourite' : 'Add to favourites'}">${starred ? '⭐' : '☆'}</button>
+      </div>
+    </div>
+    <div class="story-card-desc">${story.desc}</div>
+    <div class="story-card-meta"><span>${story.titleEn}</span></div>
+  `;
+  card.querySelector('.story-fav-btn').addEventListener('click', e => {
+    e.stopPropagation(); toggleFav(story.id); renderPicker();
+  });
+  card.addEventListener('click', () => openStory(story.id));
+  return card;
+}
+
+function renderPicker() {
+  const libraryList = document.getElementById('picker-library-list');
+  const favList     = document.getElementById('picker-fav-list');
+  const banner      = document.getElementById('library-complete-banner');
+  libraryList.innerHTML = ''; favList.innerHTML = '';
+
+  const allDone = STORIES.every(s => getStoryStatus(s.id) === 'done');
+  banner.classList.toggle('visible', allDone);
+
+  STORIES.forEach(story => libraryList.appendChild(makeStoryCard(story, false)));
+
+  const favStories = STORIES.filter(s => isFav(s.id));
+  if (favStories.length === 0) {
+    favList.innerHTML = '<div class="picker-empty">No favourites yet — tap ☆ on any story to save it here.</div>';
+  } else {
+    favStories.forEach(story => favList.appendChild(makeStoryCard(story, true)));
+  }
+}
+
+function openStory(id) {
+  const story = STORIES.find(s => s.id === id);
+  if (!story) return;
+  activeStoryId = id;
+  STORY = story.sections;
+
+  // Update reader header
+  const titleEl = document.getElementById('read-title');
+  titleEl.innerHTML = `${story.title} <button id="read-fav-btn" onclick="toggleFavFromReader()" title="Favourite">☆</button>`;
+  document.getElementById('read-subtitle').textContent = story.titleEn;
+  updateReaderFavBtn();
+
+  // Update mark done button
+  const doneBtn = document.getElementById('btn-mark-done');
+  const isDone = getStoryStatus(id) === 'done';
+  doneBtn.textContent = isDone ? '✓ Completed' : 'Mark complete ✓';
+  doneBtn.classList.toggle('active', isDone);
+
+  if (getStoryStatus(id) === 'unread') setStoryStatus(id, 'progress');
+  resetRead();
+
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-read').classList.add('active');
+  document.querySelector('.nav-tab[data-page="read-picker"]').classList.add('active');
+}
+
+function backToPicker() {
+  stopReadAloud(); stopEchoMode();
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-read-picker').classList.add('active');
+  document.querySelector('.nav-tab[data-page="read-picker"]').classList.add('active');
+  renderPicker();
+}
+
+function markStoryDone() {
+  if (!activeStoryId) return;
+  setStoryStatus(activeStoryId, 'done');
+  const btn = document.getElementById('btn-mark-done');
+  btn.textContent = '✓ Completed'; btn.classList.add('active');
+}
+
+function updateReaderFavBtn() {
+  const btn = document.getElementById('read-fav-btn');
+  if (!btn || !activeStoryId) return;
+  const starred = isFav(activeStoryId);
+  btn.textContent = starred ? '⭐' : '☆';
+  btn.classList.toggle('active', starred);
+}
+
+function toggleFavFromReader() {
+  if (!activeStoryId) return;
+  toggleFav(activeStoryId); updateReaderFavBtn();
+}
+
+// Initialise picker on load
+renderPicker();
 </script>
 
 <!-- ── BOTTOM NAV BAR ── -->
